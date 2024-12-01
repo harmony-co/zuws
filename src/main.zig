@@ -1,13 +1,13 @@
 const std = @import("std");
 const uws = @cImport({
-    @cInclude("uWS.h");
+    @cInclude("uWSZig.h");
 });
 
 pub fn main() !void {
     // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
     std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
 
-    std.debug.print("{any}\n", .{uws});
+    std.debug.print("{any}\n", .{uws.uws_app()});
 
     // stdout is for the actual output of your application, for example if you
     // are implementing gzip, then only the compressed bytes should be sent to

@@ -19,14 +19,15 @@ pub fn build(b: *std.Build) void {
     us.linkLibC();
     us.addIncludePath(b.path("uWebSockets/uSockets/src"));
     us.installHeader(b.path("uWebSockets/uSockets/src/libusockets.h"), "libusockets.h");
-    us.addCSourceFiles(.{ .root = b.path("uWebSockets/uSockets/src/"), .files = &[_][]const u8{ "bsd.c", "context.c", "loop.c", "quic.c", "socket.c", "udp.c" }, .flags = &.{"-std=c17"} });
+    us.addCSourceFiles(.{ .root = b.path("uWebSockets/uSockets/src/"), .files = &[_][]const u8{ "bsd.c", "context.c", "loop.c", "quic.c", "socket.c", "udp.c", "crypto/openssl.c", "eventing/epoll_kqueue.c", "eventing/gcd.c", "eventing/libuv.c", "io_uring/io_context.c", "io_uring/io_loop.c", "io_uring/io_socket.c" }, .flags = &.{"-std=c17"} });
 
     const uws = b.addStaticLibrary(.{ .name = "uWebSockets", .target = target, .optimize = optimize });
     uws.linkLibCpp();
     uws.linkLibrary(us);
     uws.addIncludePath(b.path("uWebSockets/src"));
-    uws.installHeader(b.path("uWS.h"), "uWS.h");
-    uws.addCSourceFiles(.{ .root = b.path("."), .files = &.{"uWS.cpp"} });
+    uws.installHeader(b.path("uWebSockets/src/App.h"), "uWebSockets/src/App.h");
+    uws.installHeader(b.path("uWSZig.h"), "uWSZig.h");
+    uws.addCSourceFiles(.{ .root = b.path("."), .files = &.{"uWSZig.cpp"} });
     b.installArtifact(uws);
 
     const exe = b.addExecutable(.{

@@ -33,7 +33,7 @@ pub fn build(b: *std.Build) void {
             "io_uring/io_loop.c",
             "io_uring/io_socket.c",
         },
-        .flags = &.{ "-std=c17", "-DLIBUS_NO_SSL" },
+        .flags = &.{"-DLIBUS_NO_SSL"},
     });
 
     const uWebSockets = b.addStaticLibrary(.{ .name = "uWebSockets", .target = target, .optimize = optimize });

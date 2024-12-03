@@ -8,7 +8,13 @@ pub fn main() !void {
     defer c.uws_app_destroy(app);
 
     c.uws_app_get(app, "/*", hello);
-    c.uws_app_listen(app, 3000, null);
+    c.uws_app_listen(app, 3000, l);
+
+    c.uws_app_run(app);
+}
+
+fn l(s: ?*c.struct_us_listen_socket_t_1) callconv(.C) void {
+    _ = s;
 }
 
 fn hello(res: ?*c.uws_res_t, req: ?*c.uws_req_t) callconv(.C) void {

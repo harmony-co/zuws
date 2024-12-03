@@ -1,0 +1,16 @@
+{
+    "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json",
+    "version": "0.2",
+    "enableFiletypes": [
+        "zig"
+    ],
+    "dictionaryDefinitions": [
+        {
+            "name": "zig",
+            "path": "./zig.txt"
+        }
+    ],
+    "dictionaries": [
+        "zig"
+    ]
+}

@@ -91,6 +91,9 @@ void uws_app_run(uws_app_t *app)
 
 void uws_app_listen(uws_app_t *app, int port, uws_listen_handler handler)
 {
+    if (!handler)
+        handler = [](auto) {};
+
     uws_app_listen_config_t config;
     config.port = port;
     config.host = nullptr;

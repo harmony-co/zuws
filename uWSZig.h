@@ -5,7 +5,7 @@
 extern "C"
 {
 #endif
-    void *uws_app();
+    void uws_run();
 #ifdef __cplusplus
 } // extern "C"
 #endif

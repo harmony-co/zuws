@@ -20,6 +20,7 @@ pub fn build(b: *std.Build) void {
     us.addIncludePath(b.path("uWebSockets/uSockets/src"));
     us.installHeader(b.path("uWebSockets/uSockets/src/libusockets.h"), "libusockets.h");
     us.addCSourceFiles(.{ .root = b.path("uWebSockets/uSockets/src/"), .files = &[_][]const u8{ "bsd.c", "context.c", "loop.c", "quic.c", "socket.c", "udp.c", "crypto/openssl.c", "eventing/epoll_kqueue.c", "eventing/gcd.c", "eventing/libuv.c", "io_uring/io_context.c", "io_uring/io_loop.c", "io_uring/io_socket.c" }, .flags = &.{"-std=c17"} });
+    b.installArtifact(us);
 
     const uws = b.addStaticLibrary(.{ .name = "uWebSockets", .target = target, .optimize = optimize });
     uws.linkLibCpp();

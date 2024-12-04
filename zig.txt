@@ -1,0 +1,11 @@
+comptime
+struct
+nosuspend
+usingnamespace
+callconv
+
+usize
+isize
+anytype
+
+deinit

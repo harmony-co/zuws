@@ -1,29 +1,20 @@
 const std = @import("std");
-const uws = @cImport({
-    @cInclude("uWSZig.h");
+const c = @cImport({
+    @cInclude("uws.h");
 });
 
 pub fn main() !void {
-    // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
-    std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
+    const app = c.uws_create_app();
+    defer c.uws_app_destroy(app);
 
-    std.debug.print("{any}\n", .{uws.uws_run()});
+    c.uws_app_get(app, "/*", hello);
+    c.uws_app_listen(app, 3000, null);
 
-    // stdout is for the actual output of your application, for example if you
-    // are implementing gzip, then only the compressed bytes should be sent to
-    // stdout, not any debugging messages.
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
-
-    try stdout.print("Run `zig build test` to run the tests.\n", .{});
-
-    try bw.flush(); // don't forget to flush!
+    c.uws_app_run(app);
 }
 
-test "simple test" {
-    var list = std.ArrayList(i32).init(std.testing.allocator);
-    defer list.deinit(); // try commenting this out and see if zig detects the memory leak!
-    try list.append(42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
+fn hello(res: ?*c.uws_res_t, req: ?*c.uws_req_t) callconv(.C) void {
+    _ = req;
+    const str = "Hello World!";
+    c.uws_res_end(res, str, str.len);
 }

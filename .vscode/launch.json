@@ -1,0 +1,36 @@
+{
+  "configurations": [
+    {
+      "name": "(lldb) Launch - Debug",
+      "type": "lldb",
+      "request": "launch",
+      "preLaunchTask": "build:debug",
+      "program": "${workspaceFolder}/zig-out/bin/zuws"
+    },
+    {
+      "name": "(cppdbg-lldb) Launch - Debug",
+      "type": "cppdbg",
+      "request": "launch",
+      "preLaunchTask": "build:debug",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/zig-out/bin/zuws",
+      "MIMode": "lldb"
+    },
+    {
+      "name": "(lldb) Launch - Safe",
+      "type": "lldb",
+      "request": "launch",
+      "preLaunchTask": "build:safe",
+      "program": "${workspaceFolder}/zig-out/bin/zuws"
+    },
+    {
+      "name": "(cppdbg-lldb) Launch - Safe",
+      "type": "cppdbg",
+      "request": "launch",
+      "preLaunchTask": "build:safe",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/zig-out/bin/zuws",
+      "MIMode": "lldb"
+    },
+  ]
+}

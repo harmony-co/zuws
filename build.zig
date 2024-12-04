@@ -1,6 +1,6 @@
 const std = @import("std");
 
-pub fn build(b: *std.Build) void {
+pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
@@ -11,9 +11,22 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    var flags = std.ArrayList([]const u8).init(b.allocator);
+    defer flags.deinit();
+
+    const ssl = b.option(bool, "ssl", "Enable SSL support") orelse false;
+
     const uSockets = b.addStaticLibrary(.{ .name = "uSockets", .target = target, .optimize = optimize });
     uSockets.linkLibC();
     uSockets.linkSystemLibrary("zlib");
+
+    if (ssl) {
+        // add boringssl and flag
+        uSockets.linkLibCpp();
+    } else {
+        try flags.append("-DLIBUS_NO_SSL");
+    }
+
     uSockets.addIncludePath(b.path("uWebSockets/uSockets/src"));
     uSockets.installHeader(b.path("uWebSockets/uSockets/src/libusockets.h"), "libusockets.h");
     uSockets.addCSourceFiles(.{
@@ -26,6 +39,7 @@ pub fn build(b: *std.Build) void {
             "socket.c",
             "udp.c",
             "crypto/openssl.c",
+            "crypto/sni_tree.cpp",
             "eventing/epoll_kqueue.c",
             "eventing/gcd.c",
             "eventing/libuv.c",
@@ -33,7 +47,7 @@ pub fn build(b: *std.Build) void {
             "io_uring/io_loop.c",
             "io_uring/io_socket.c",
         },
-        .flags = &.{"-DLIBUS_NO_SSL"},
+        .flags = flags.items,
     });
 
     const uWebSockets = b.addStaticLibrary(.{ .name = "uWebSockets", .target = target, .optimize = optimize });

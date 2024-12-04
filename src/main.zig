@@ -1,20 +1,16 @@
 const std = @import("std");
+const App = @import("./app.zig").App;
+
 const c = @cImport({
     @cInclude("uws.h");
 });
 
 pub fn main() !void {
-    const app = c.uws_create_app();
-    defer c.uws_app_destroy(app);
+    const app = try App.init();
+    defer app.deinit();
 
-    if (app == null) {
-        return error.CouldNotStartServer;
-    }
-
-    c.uws_app_get(app, "/*", hello);
-    c.uws_app_listen(app, 3000, null);
-
-    c.uws_app_run(app);
+    app.get("/*", hello)
+        .listen(3000, null);
 }
 
 fn hello(res: ?*c.uws_res_t, req: ?*c.uws_req_t) callconv(.C) void {

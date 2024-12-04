@@ -1,5 +1,4 @@
 {
-  "cmake.ignoreCMakeListsMissing": true,
   "files.associations": {
     "array": "cpp",
     "string": "cpp",

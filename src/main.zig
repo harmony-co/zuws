@@ -7,8 +7,8 @@ pub fn main() !void {
     const app = try App.init();
     defer app.deinit();
 
-    app.get("/*", hello)
-        .listen(3001, null);
+    try app.get("/*", hello)
+        .listen(3000, null);
 }
 
 fn hello(res: ?*c.uws_res_t, req: ?*c.uws_req_t) callconv(.C) void {

@@ -1,4 +1,7 @@
-const c = @import("uws");
+const std = @import("std");
+const c = @cImport({
+    @cInclude("uws.h");
+});
 
 pub const uWSError = error{
     CouldNotCreateApp,
@@ -22,7 +25,12 @@ pub const App = struct {
     }
 
     /// This also calls `run` and starts the app
-    pub fn listen(app: *const App, port: i32, handler: c.uws_listen_handler) void {
+    pub fn listen(app: *const App, port: u16, handler: c.uws_listen_handler) !void {
+        const addr = try std.net.Address.parseIp4("127.0.0.1", port);
+        const sock_fd = try std.posix.socket(addr.any.family, std.posix.SOCK.STREAM | std.posix.SOCK.CLOEXEC, std.posix.IPPROTO.TCP);
+        try std.posix.bind(sock_fd, &addr.any, addr.getOsSockLen());
+        std.posix.close(sock_fd);
+
         c.uws_app_listen(app.ptr, port, handler);
         c.uws_app_run(app.ptr);
     }

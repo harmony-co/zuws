@@ -1,6 +1,4 @@
-const c = @cImport({
-    @cInclude("uws.h");
-});
+const c = @import("uws");
 
 pub const uWSError = error{
     CouldNotCreateApp,

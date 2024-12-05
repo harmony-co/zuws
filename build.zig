@@ -17,7 +17,6 @@ pub fn build(b: *std.Build) !void {
     const ssl = b.option(bool, "ssl", "Enable SSL support") orelse false;
 
     const uSockets = b.addStaticLibrary(.{ .name = "uSockets", .target = target, .optimize = optimize });
-    uSockets.linkLibC();
     uSockets.linkSystemLibrary("zlib");
 
     if (ssl) {
@@ -53,12 +52,16 @@ pub fn build(b: *std.Build) !void {
     const uWebSockets = b.addStaticLibrary(.{ .name = "uWebSockets", .target = target, .optimize = optimize });
     uWebSockets.linkLibCpp();
     uWebSockets.linkLibrary(uSockets);
-    uWebSockets.addIncludePath(b.path("uWebSockets/src"));
-    uWebSockets.installHeader(b.path("uWebSockets/src/App.h"), "uWebSockets/src/App.h");
-    uWebSockets.installHeader(b.path("bindings/uws.h"), "uws.h");
     uWebSockets.addCSourceFiles(.{ .root = b.path("."), .files = &.{"bindings/uws.cpp"} });
-
     b.installArtifact(uWebSockets);
+
+    const translate_c = b.addTranslateC(.{
+        .root_source_file = b.path("bindings/uws.h"),
+        .target = target,
+        .optimize = optimize,
+    });
+
+    exe.root_module.addImport("uws", translate_c.createModule());
     exe.linkLibrary(uWebSockets);
 
     b.installArtifact(exe);

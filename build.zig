@@ -55,10 +55,17 @@ pub fn build(b: *std.Build) !void {
     uWebSockets.linkLibrary(uSockets);
     uWebSockets.addIncludePath(b.path("uWebSockets/src"));
     uWebSockets.installHeader(b.path("uWebSockets/src/App.h"), "uWebSockets/src/App.h");
-    uWebSockets.installHeader(b.path("bindings/uws.h"), "uws.h");
     uWebSockets.addCSourceFiles(.{ .root = b.path("."), .files = &.{"bindings/uws.cpp"} });
-
     b.installArtifact(uWebSockets);
+
+    const translate_c = b.addTranslateC(.{
+        .root_source_file = b.path("bindings/uws.h"),
+        .target = target,
+        .optimize = optimize,
+        .link_libc = true,
+    });
+
+    exe.root_module.addImport("uws", translate_c.createModule());
     exe.linkLibrary(uWebSockets);
 
     b.installArtifact(exe);

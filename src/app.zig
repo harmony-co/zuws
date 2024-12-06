@@ -37,4 +37,49 @@ pub const App = struct {
         c.uws_app_get(app.ptr, pattern, handler);
         return app;
     }
+
+    pub fn post(app: *const App, pattern: [:0]const u8, handler: c.uws_method_handler) *const App {
+        c.uws_app_post(app.ptr, pattern, handler);
+        return app;
+    }
+
+    pub fn put(app: *const App, pattern: [:0]const u8, handler: c.uws_method_handler) *const App {
+        c.uws_app_put(app.ptr, pattern, handler);
+        return app;
+    }
+
+    pub fn options(app: *const App, pattern: [:0]const u8, handler: c.uws_method_handler) *const App {
+        c.uws_app_options(app.ptr, pattern, handler);
+        return app;
+    }
+
+    pub fn del(app: *const App, pattern: [:0]const u8, handler: c.uws_method_handler) *const App {
+        c.uws_app_del(app.ptr, pattern, handler);
+        return app;
+    }
+
+    pub fn patch(app: *const App, pattern: [:0]const u8, handler: c.uws_method_handler) *const App {
+        c.uws_app_patch(app.ptr, pattern, handler);
+        return app;
+    }
+
+    pub fn head(app: *const App, pattern: [:0]const u8, handler: c.uws_method_handler) *const App {
+        c.uws_app_head(app.ptr, pattern, handler);
+        return app;
+    }
+
+    pub fn connect(app: *const App, pattern: [:0]const u8, handler: c.uws_method_handler) *const App {
+        c.uws_app_connect(app.ptr, pattern, handler);
+        return app;
+    }
+
+    pub fn trace(app: *const App, pattern: [:0]const u8, handler: c.uws_method_handler) *const App {
+        c.uws_app_trace(app.ptr, pattern, handler);
+        return app;
+    }
+
+    pub fn any(app: *const App, pattern: [:0]const u8, handler: c.uws_method_handler) *const App {
+        c.uws_app_any(app.ptr, pattern, handler);
+        return app;
+    }
 };

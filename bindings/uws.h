@@ -156,12 +156,12 @@ extern "C"
     struct uws_websocket_s;
     typedef struct uws_websocket_s uws_websocket_t;
 
-    typedef void (*uws_websocket_handler)(uws_websocket_t *ws, void *user_data);
-    typedef void (*uws_websocket_message_handler)(uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode, void *user_data);
-    typedef void (*uws_websocket_ping_pong_handler)(uws_websocket_t *ws, const char *message, size_t length, void *user_data);
-    typedef void (*uws_websocket_close_handler)(uws_websocket_t *ws, int code, const char *message, size_t length, void *user_data);
-    typedef void (*uws_websocket_upgrade_handler)(uws_res_t *response, uws_req_t *request, uws_socket_context_t *context, void *user_data);
-    typedef void (*uws_websocket_subscription_handler)(uws_websocket_t *ws, const char *topic_name, size_t topic_name_length, int new_number_of_subscriber, int old_number_of_subscriber, void *user_data);
+    typedef void (*uws_websocket_handler)(uws_websocket_t *ws);
+    typedef void (*uws_websocket_message_handler)(uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode);
+    typedef void (*uws_websocket_ping_pong_handler)(uws_websocket_t *ws, const char *message, size_t length);
+    typedef void (*uws_websocket_close_handler)(uws_websocket_t *ws, int code, const char *message, size_t length);
+    typedef void (*uws_websocket_upgrade_handler)(uws_res_t *response, uws_req_t *request, uws_socket_context_t *context);
+    typedef void (*uws_websocket_subscription_handler)(uws_websocket_t *ws, const char *topic_name, size_t topic_name_length, int new_number_of_subscriber, int old_number_of_subscriber);
 
     typedef struct
     {
@@ -196,26 +196,26 @@ extern "C"
         DROPPED
     } uws_sendstatus_t;
 
-    void uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior, void *user_data);
-    void *uws_ws_get_user_data(int ssl, uws_websocket_t *ws);
-    void uws_ws_close(int ssl, uws_websocket_t *ws);
-    uws_sendstatus_t uws_ws_send(int ssl, uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode);
-    uws_sendstatus_t uws_ws_send_with_options(int ssl, uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode, bool compress, bool fin);
-    uws_sendstatus_t uws_ws_send_fragment(int ssl, uws_websocket_t *ws, const char *message, size_t length, bool compress);
-    uws_sendstatus_t uws_ws_send_first_fragment(int ssl, uws_websocket_t *ws, const char *message, size_t length, bool compress);
-    uws_sendstatus_t uws_ws_send_first_fragment_with_opcode(int ssl, uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode, bool compress);
-    uws_sendstatus_t uws_ws_send_last_fragment(int ssl, uws_websocket_t *ws, const char *message, size_t length, bool compress);
-    void uws_ws_end(int ssl, uws_websocket_t *ws, int code, const char *message, size_t length);
-    void uws_ws_cork(int ssl, uws_websocket_t *ws, void (*handler)(void *user_data), void *user_data);
-    bool uws_ws_subscribe(int ssl, uws_websocket_t *ws, const char *topic, size_t length);
-    bool uws_ws_unsubscribe(int ssl, uws_websocket_t *ws, const char *topic, size_t length);
-    bool uws_ws_is_subscribed(int ssl, uws_websocket_t *ws, const char *topic, size_t length);
-    void uws_ws_iterate_topics(int ssl, uws_websocket_t *ws, void (*callback)(const char *topic, size_t length, void *user_data), void *user_data);
-    bool uws_ws_publish(int ssl, uws_websocket_t *ws, const char *topic, size_t topic_length, const char *message, size_t message_length);
-    bool uws_ws_publish_with_options(int ssl, uws_websocket_t *ws, const char *topic, size_t topic_length, const char *message, size_t message_length, uws_opcode_t opcode, bool compress);
-    unsigned int uws_ws_get_buffered_amount(int ssl, uws_websocket_t *ws);
-    size_t uws_ws_get_remote_address(int ssl, uws_websocket_t *ws, const char **dest);
-    size_t uws_ws_get_remote_address_as_text(int ssl, uws_websocket_t *ws, const char **dest);
+    void uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior);
+    void *uws_ws_get_user_data(uws_websocket_t *ws);
+    void uws_ws_close(uws_websocket_t *ws);
+    uws_sendstatus_t uws_ws_send(uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode);
+    uws_sendstatus_t uws_ws_send_with_options(uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode, bool compress, bool fin);
+    uws_sendstatus_t uws_ws_send_fragment(uws_websocket_t *ws, const char *message, size_t length, bool compress);
+    uws_sendstatus_t uws_ws_send_first_fragment(uws_websocket_t *ws, const char *message, size_t length, bool compress);
+    uws_sendstatus_t uws_ws_send_first_fragment_with_opcode(uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode, bool compress);
+    uws_sendstatus_t uws_ws_send_last_fragment(uws_websocket_t *ws, const char *message, size_t length, bool compress);
+    void uws_ws_end(uws_websocket_t *ws, int code, const char *message, size_t length);
+    void uws_ws_cork(uws_websocket_t *ws, void (*handler)(void *user_data), void *user_data);
+    bool uws_ws_subscribe(uws_websocket_t *ws, const char *topic, size_t length);
+    bool uws_ws_unsubscribe(uws_websocket_t *ws, const char *topic, size_t length);
+    bool uws_ws_is_subscribed(uws_websocket_t *ws, const char *topic, size_t length);
+    void uws_ws_iterate_topics(uws_websocket_t *ws, void (*callback)(const char *topic, size_t length));
+    bool uws_ws_publish(uws_websocket_t *ws, const char *topic, size_t topic_length, const char *message, size_t message_length);
+    bool uws_ws_publish_with_options(uws_websocket_t *ws, const char *topic, size_t topic_length, const char *message, size_t message_length, uws_opcode_t opcode, bool compress);
+    unsigned int uws_ws_get_buffered_amount(uws_websocket_t *ws);
+    size_t uws_ws_get_remote_address(uws_websocket_t *ws, const char **dest);
+    size_t uws_ws_get_remote_address_as_text(uws_websocket_t *ws, const char **dest);
 
 #pragma endregion
 

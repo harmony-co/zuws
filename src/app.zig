@@ -82,4 +82,9 @@ pub const App = struct {
         c.uws_app_any(app.ptr, pattern, handler);
         return app;
     }
+
+    pub fn ws(app: *const App, pattern: [:0]const u8, behavior: c.uws_socket_behavior_t) *const App {
+        c.uws_ws(app.ptr, pattern, behavior);
+        return app;
+    }
 };

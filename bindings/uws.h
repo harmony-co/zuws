@@ -4,9 +4,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-
-#ifndef uws
-#define uws
+#ifndef uws_h
+#define uws_h
 
 #ifdef __cplusplus
 extern "C"
@@ -27,6 +26,38 @@ extern "C"
         const char *host;
         int options;
     } uws_app_listen_config_t;
+
+    typedef enum
+    {
+        /* These are not actual compression options */
+        _COMPRESSOR_MASK = 0x00FF,
+        _DECOMPRESSOR_MASK = 0x0F00,
+        /* Disabled, shared, shared are "special" values */
+        DISABLED = 0,
+        SHARED_COMPRESSOR = 1,
+        SHARED_DECOMPRESSOR = 1 << 8,
+        /* Highest 4 bits describe decompressor */
+        DEDICATED_DECOMPRESSOR_32KB = 15 << 8,
+        DEDICATED_DECOMPRESSOR_16KB = 14 << 8,
+        DEDICATED_DECOMPRESSOR_8KB = 13 << 8,
+        DEDICATED_DECOMPRESSOR_4KB = 12 << 8,
+        DEDICATED_DECOMPRESSOR_2KB = 11 << 8,
+        DEDICATED_DECOMPRESSOR_1KB = 10 << 8,
+        DEDICATED_DECOMPRESSOR_512B = 9 << 8,
+        /* Same as 32kb */
+        DEDICATED_DECOMPRESSOR = 15 << 8,
+        /* Lowest 8 bit describe compressor */
+        DEDICATED_COMPRESSOR_3KB = 9 << 4 | 1,
+        DEDICATED_COMPRESSOR_4KB = 9 << 4 | 2,
+        DEDICATED_COMPRESSOR_8KB = 10 << 4 | 3,
+        DEDICATED_COMPRESSOR_16KB = 11 << 4 | 4,
+        DEDICATED_COMPRESSOR_32KB = 12 << 4 | 5,
+        DEDICATED_COMPRESSOR_64KB = 13 << 4 | 6,
+        DEDICATED_COMPRESSOR_128KB = 14 << 4 | 7,
+        DEDICATED_COMPRESSOR_256KB = 15 << 4 | 8,
+        /* Same as 256kb */
+        DEDICATED_COMPRESSOR = 15 << 4 | 8
+    } uws_compress_options_t;
 
 #pragma region uWS-app
 
@@ -110,6 +141,83 @@ extern "C"
     size_t uws_req_get_parameter(uws_req_t *res, unsigned short index, const char **dest);
 
 #pragma endregion
+#pragma region uWS-Websockets
+
+    typedef enum
+    {
+        CONTINUATION = 0,
+        TEXT = 1,
+        BINARY = 2,
+        CLOSE = 8,
+        PING = 9,
+        PONG = 10
+    } uws_opcode_t;
+
+    struct uws_websocket_s;
+    typedef struct uws_websocket_s uws_websocket_t;
+
+    typedef void (*uws_websocket_handler)(uws_websocket_t *ws, void *user_data);
+    typedef void (*uws_websocket_message_handler)(uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode, void *user_data);
+    typedef void (*uws_websocket_ping_pong_handler)(uws_websocket_t *ws, const char *message, size_t length, void *user_data);
+    typedef void (*uws_websocket_close_handler)(uws_websocket_t *ws, int code, const char *message, size_t length, void *user_data);
+    typedef void (*uws_websocket_upgrade_handler)(uws_res_t *response, uws_req_t *request, uws_socket_context_t *context, void *user_data);
+    typedef void (*uws_websocket_subscription_handler)(uws_websocket_t *ws, const char *topic_name, size_t topic_name_length, int new_number_of_subscriber, int old_number_of_subscriber, void *user_data);
+
+    typedef struct
+    {
+        uws_compress_options_t compression;
+        /* Maximum message size we can receive */
+        unsigned int maxPayloadLength;
+        /* 2 minutes timeout is good */
+        unsigned short idleTimeout;
+        /* 64kb backpressure is probably good */
+        unsigned int maxBackpressure;
+        bool closeOnBackpressureLimit;
+        /* This one depends on kernel timeouts and is a bad default */
+        bool resetIdleTimeoutOnSend;
+        /* A good default, esp. for newcomers */
+        bool sendPingsAutomatically;
+        /* Maximum socket lifetime in seconds before forced closure (defaults to disabled) */
+        unsigned short maxLifetime;
+        uws_websocket_upgrade_handler upgrade;
+        uws_websocket_handler open;
+        uws_websocket_message_handler message;
+        uws_websocket_handler drain;
+        uws_websocket_ping_pong_handler ping;
+        uws_websocket_ping_pong_handler pong;
+        uws_websocket_close_handler close;
+        uws_websocket_subscription_handler subscription;
+    } uws_socket_behavior_t;
+
+    typedef enum
+    {
+        BACKPRESSURE,
+        SUCCESS,
+        DROPPED
+    } uws_sendstatus_t;
+
+    void uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior, void *user_data);
+    void *uws_ws_get_user_data(int ssl, uws_websocket_t *ws);
+    void uws_ws_close(int ssl, uws_websocket_t *ws);
+    uws_sendstatus_t uws_ws_send(int ssl, uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode);
+    uws_sendstatus_t uws_ws_send_with_options(int ssl, uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode, bool compress, bool fin);
+    uws_sendstatus_t uws_ws_send_fragment(int ssl, uws_websocket_t *ws, const char *message, size_t length, bool compress);
+    uws_sendstatus_t uws_ws_send_first_fragment(int ssl, uws_websocket_t *ws, const char *message, size_t length, bool compress);
+    uws_sendstatus_t uws_ws_send_first_fragment_with_opcode(int ssl, uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode, bool compress);
+    uws_sendstatus_t uws_ws_send_last_fragment(int ssl, uws_websocket_t *ws, const char *message, size_t length, bool compress);
+    void uws_ws_end(int ssl, uws_websocket_t *ws, int code, const char *message, size_t length);
+    void uws_ws_cork(int ssl, uws_websocket_t *ws, void (*handler)(void *user_data), void *user_data);
+    bool uws_ws_subscribe(int ssl, uws_websocket_t *ws, const char *topic, size_t length);
+    bool uws_ws_unsubscribe(int ssl, uws_websocket_t *ws, const char *topic, size_t length);
+    bool uws_ws_is_subscribed(int ssl, uws_websocket_t *ws, const char *topic, size_t length);
+    void uws_ws_iterate_topics(int ssl, uws_websocket_t *ws, void (*callback)(const char *topic, size_t length, void *user_data), void *user_data);
+    bool uws_ws_publish(int ssl, uws_websocket_t *ws, const char *topic, size_t topic_length, const char *message, size_t message_length);
+    bool uws_ws_publish_with_options(int ssl, uws_websocket_t *ws, const char *topic, size_t topic_length, const char *message, size_t message_length, uws_opcode_t opcode, bool compress);
+    unsigned int uws_ws_get_buffered_amount(int ssl, uws_websocket_t *ws);
+    size_t uws_ws_get_remote_address(int ssl, uws_websocket_t *ws, const char **dest);
+    size_t uws_ws_get_remote_address_as_text(int ssl, uws_websocket_t *ws, const char **dest);
+
+#pragma endregion
 
     void uws_loop_defer(struct us_loop_t *loop, void(cb(void *user_data)), void *user_data);
     struct us_loop_t *uws_get_loop();
@@ -119,4 +227,4 @@ extern "C"
 } // extern "C"
 #endif
 
-#endif // uws
+#endif // uws_h

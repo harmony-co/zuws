@@ -10,4 +10,5 @@
   "lldb.dereferencePointers": true,
   "lldb.consoleMode": "commands",
   "cmake.ignoreCMakeListsMissing": true,
+  "zig.zls.enabled": "on",
 }

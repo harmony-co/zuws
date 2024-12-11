@@ -243,6 +243,186 @@ size_t uws_req_get_parameter(uws_req_t *res, unsigned short index, const char **
 }
 
 #pragma endregion
+#pragma region uWS-Websockets
+
+void uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior)
+{
+    auto generic_handler = uWS::App::WebSocketBehavior<void *>{
+        .compression = (uWS::CompressOptions)(uint64_t)behavior.compression,
+        .maxPayloadLength = behavior.maxPayloadLength,
+        .idleTimeout = behavior.idleTimeout,
+        .maxBackpressure = behavior.maxBackpressure,
+        .closeOnBackpressureLimit = behavior.closeOnBackpressureLimit,
+        .resetIdleTimeoutOnSend = behavior.resetIdleTimeoutOnSend,
+        .sendPingsAutomatically = behavior.sendPingsAutomatically,
+        .maxLifetime = behavior.maxLifetime,
+    };
+    if (behavior.upgrade)
+        generic_handler.upgrade = [behavior](auto *res, auto *req, auto *context)
+        {
+            behavior.upgrade((uws_res_t *)res, (uws_req_t *)req, (uws_socket_context_t *)context);
+        };
+    if (behavior.open)
+        generic_handler.open = [behavior](auto *ws)
+        {
+            behavior.open((uws_websocket_t *)ws);
+        };
+    if (behavior.message)
+        generic_handler.message = [behavior](auto *ws, auto message, auto opcode)
+        {
+            behavior.message((uws_websocket_t *)ws, message.data(), message.length(), (uws_opcode_t)opcode);
+        };
+    if (behavior.drain)
+        generic_handler.drain = [behavior](auto *ws)
+        {
+            behavior.drain((uws_websocket_t *)ws);
+        };
+    if (behavior.ping)
+        generic_handler.ping = [behavior](auto *ws, auto message)
+        {
+            behavior.ping((uws_websocket_t *)ws, message.data(), message.length());
+        };
+    if (behavior.pong)
+        generic_handler.pong = [behavior](auto *ws, auto message)
+        {
+            behavior.pong((uws_websocket_t *)ws, message.data(), message.length());
+        };
+    if (behavior.close)
+        generic_handler.close = [behavior](auto *ws, int code, auto message)
+        {
+            behavior.close((uws_websocket_t *)ws, code, message.data(), message.length());
+        };
+    if (behavior.subscription)
+        generic_handler.subscription = [behavior](auto *ws, auto topic, int subscribers, int old_subscribers)
+        {
+            behavior.subscription((uws_websocket_t *)ws, topic.data(), topic.length(), subscribers, old_subscribers);
+        };
+
+    uWS::App *uwsApp = (uWS::App *)app;
+    uwsApp->ws<void *>(pattern, std::move(generic_handler));
+}
+
+void *uws_ws_get_user_data(uws_websocket_t *ws)
+{
+    uWS::WebSocket<false, true, void *> *uws = (uWS::WebSocket<false, true, void *> *)ws;
+    return *uws->getUserData();
+}
+
+void uws_ws_close(uws_websocket_t *ws)
+{
+    uWS::WebSocket<false, true, void *> *uws = (uWS::WebSocket<false, true, void *> *)ws;
+    uws->close();
+}
+
+uws_sendstatus_t uws_ws_send(uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode)
+{
+    uWS::WebSocket<false, true, void *> *uws = (uWS::WebSocket<false, true, void *> *)ws;
+    return (uws_sendstatus_t)uws->send(std::string_view(message, length), (uWS::OpCode)(unsigned char)opcode);
+}
+
+uws_sendstatus_t uws_ws_send_with_options(uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode, bool compress, bool fin)
+{
+    uWS::WebSocket<false, true, void *> *uws = (uWS::WebSocket<false, true, void *> *)ws;
+    return (uws_sendstatus_t)uws->send(std::string_view(message, length), (uWS::OpCode)(unsigned char)opcode, compress, fin);
+}
+
+uws_sendstatus_t uws_ws_send_fragment(uws_websocket_t *ws, const char *message, size_t length, bool compress)
+{
+    uWS::WebSocket<false, true, void *> *uws = (uWS::WebSocket<false, true, void *> *)ws;
+    return (uws_sendstatus_t)uws->sendFragment(std::string_view(message, length), compress);
+}
+
+uws_sendstatus_t uws_ws_send_first_fragment(uws_websocket_t *ws, const char *message, size_t length, bool compress)
+{
+    uWS::WebSocket<false, true, void *> *uws = (uWS::WebSocket<false, true, void *> *)ws;
+    return (uws_sendstatus_t)uws->sendFirstFragment(std::string_view(message, length), uWS::OpCode::BINARY, compress);
+}
+
+uws_sendstatus_t uws_ws_send_first_fragment_with_opcode(uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode, bool compress)
+{
+    uWS::WebSocket<false, true, void *> *uws = (uWS::WebSocket<false, true, void *> *)ws;
+    return (uws_sendstatus_t)uws->sendFirstFragment(std::string_view(message, length), (uWS::OpCode)(unsigned char)opcode, compress);
+}
+
+uws_sendstatus_t uws_ws_send_last_fragment(uws_websocket_t *ws, const char *message, size_t length, bool compress)
+{
+    uWS::WebSocket<false, true, void *> *uws = (uWS::WebSocket<false, true, void *> *)ws;
+    return (uws_sendstatus_t)uws->sendLastFragment(std::string_view(message, length), compress);
+}
+
+void uws_ws_end(uws_websocket_t *ws, int code, const char *message, size_t length)
+{
+    uWS::WebSocket<false, true, void *> *uws = (uWS::WebSocket<false, true, void *> *)ws;
+    uws->end(code, std::string_view(message, length));
+}
+
+void uws_ws_cork(uws_websocket_t *ws, void (*handler)(void *user_data), void *user_data)
+{
+    uWS::WebSocket<false, true, void *> *uws = (uWS::WebSocket<false, true, void *> *)ws;
+    uws->cork([handler, user_data]()
+              { handler(user_data); });
+}
+
+bool uws_ws_subscribe(uws_websocket_t *ws, const char *topic, size_t length)
+{
+    uWS::WebSocket<false, true, void *> *uws = (uWS::WebSocket<false, true, void *> *)ws;
+    return uws->subscribe(std::string_view(topic, length));
+}
+
+bool uws_ws_unsubscribe(uws_websocket_t *ws, const char *topic, size_t length)
+{
+    uWS::WebSocket<false, true, void *> *uws = (uWS::WebSocket<false, true, void *> *)ws;
+    return uws->unsubscribe(std::string_view(topic, length));
+}
+
+bool uws_ws_is_subscribed(uws_websocket_t *ws, const char *topic, size_t length)
+{
+    uWS::WebSocket<false, true, void *> *uws = (uWS::WebSocket<false, true, void *> *)ws;
+    return uws->isSubscribed(std::string_view(topic, length));
+}
+
+void uws_ws_iterate_topics(uws_websocket_t *ws, void (*callback)(const char *topic, size_t length))
+{
+    uWS::WebSocket<false, true, void *> *uws = (uWS::WebSocket<false, true, void *> *)ws;
+    uws->iterateTopics([callback](auto topic)
+                       { callback(topic.data(), topic.length()); });
+}
+
+bool uws_ws_publish(uws_websocket_t *ws, const char *topic, size_t topic_length, const char *message, size_t message_length)
+{
+    uWS::WebSocket<false, true, void *> *uws = (uWS::WebSocket<false, true, void *> *)ws;
+    return uws->publish(std::string_view(topic, topic_length), std::string_view(message, message_length));
+}
+
+bool uws_ws_publish_with_options(uws_websocket_t *ws, const char *topic, size_t topic_length, const char *message, size_t message_length, uws_opcode_t opcode, bool compress)
+{
+    uWS::WebSocket<false, true, void *> *uws = (uWS::WebSocket<false, true, void *> *)ws;
+    return uws->publish(std::string_view(topic, topic_length), std::string_view(message, message_length), (uWS::OpCode)(unsigned char)opcode, compress);
+}
+
+unsigned int uws_ws_get_buffered_amount(uws_websocket_t *ws)
+{
+    uWS::WebSocket<false, true, void *> *uws = (uWS::WebSocket<false, true, void *> *)ws;
+    return uws->getBufferedAmount();
+}
+
+size_t uws_ws_get_remote_address(uws_websocket_t *ws, const char **dest)
+{
+    uWS::WebSocket<false, true, void *> *uws = (uWS::WebSocket<false, true, void *> *)ws;
+    std::string_view value = uws->getRemoteAddress();
+    *dest = value.data();
+    return value.length();
+}
+
+size_t uws_ws_get_remote_address_as_text(uws_websocket_t *ws, const char **dest)
+{
+    uWS::WebSocket<false, true, void *> *uws = (uWS::WebSocket<false, true, void *> *)ws;
+    std::string_view value = uws->getRemoteAddressAsText();
+    *dest = value.data();
+    return value.length();
+}
+
+#pragma endregion
 
 void uws_loop_defer(us_loop_t *loop, void(cb(void *user_data)), void *user_data)
 {

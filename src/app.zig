@@ -52,11 +52,11 @@ pub const Response = struct {
     pub fn onWritable(res: *const Response, handler: c.uws_res_on_writable_handler) void {
         c.uws_res_on_writable(res.ptr, handler);
     }
-    pub fn onAborted(res: *const Response, handler: c.uws_res_on_aborted_handler, optionalData: ?*anyopaque) void {
-        c.uws_res_on_aborted(res.ptr, handler, optionalData);
+    pub fn onAborted(res: *const Response, handler: c.uws_res_on_aborted_handler) void {
+        c.uws_res_on_aborted(res.ptr, handler);
     }
-    pub fn onData(res: *const Response, handler: c.uws_res_on_data_handler, optionalData: ?*anyopaque) void {
-        c.uws_res_on_data(res.ptr, handler, optionalData);
+    pub fn onData(res: *const Response, handler: c.uws_res_on_data_handler) void {
+        c.uws_res_on_data(res.ptr, handler);
     }
     pub fn upgrade(res: *const Response, data: ?*anyopaque, secWebSocketKey: [:0]const u8, secWebSocketKeyLength: usize, secWebSocketProtocol: [:0]const u8, secWebSocketProtocolLength: usize, secWebSocketExtensions: [:0]const u8, secWebSocketExtensionsLength: usize, ws: ?*c.uws_socket_context_t) void {
         return c.uws_res_upgrade(res.ptr, data, secWebSocketKey, secWebSocketKeyLength, secWebSocketProtocol, secWebSocketProtocolLength, secWebSocketExtensions, secWebSocketExtensionsLength, ws);

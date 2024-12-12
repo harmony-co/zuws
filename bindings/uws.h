@@ -104,7 +104,7 @@ extern "C"
 
     void uws_res_close(uws_res_t *res);
     void uws_res_end(uws_res_t *res, const char *data, size_t length, bool close_connection);
-    void uws_res_cork(uws_res_t *res, void (*callback)(uws_res_t *res, void *user_data), void *user_data);
+    void uws_res_cork(uws_res_t *res, void (*callback)(uws_res_t *res));
     void uws_res_pause(uws_res_t *res);
     void uws_res_resume(uws_res_t *res);
     void uws_res_write_continue(uws_res_t *res);
@@ -115,7 +115,7 @@ extern "C"
     bool uws_res_write(uws_res_t *res, const char *data, size_t length);
     void uws_res_override_write_offset(uws_res_t *res, uintmax_t offset);
     bool uws_res_has_responded(uws_res_t *res);
-    void uws_res_on_writable(uws_res_t *res, uws_res_on_writable_handler handler, void *user_data);
+    void uws_res_on_writable(uws_res_t *res, uws_res_on_writable_handler handler);
     void uws_res_on_aborted(uws_res_t *res, uws_res_on_aborted_handler handler, void *optional_data);
     void uws_res_on_data(uws_res_t *res, uws_res_on_data_handler handler, void *optional_data);
     void uws_res_upgrade(uws_res_t *res, void *data, const char *sec_web_socket_key, size_t sec_web_socket_key_length, const char *sec_web_socket_protocol, size_t sec_web_socket_protocol_length, const char *sec_web_socket_extensions, size_t sec_web_socket_extensions_length, uws_socket_context_t *ws);
@@ -128,12 +128,12 @@ extern "C"
 #pragma endregion
 #pragma region uWS-Request
 
-    typedef void (*uws_get_headers_server_handler)(const char *header_name, size_t header_name_size, const char *header_value, size_t header_value_size, void *user_data);
+    typedef void (*uws_get_headers_server_handler)(const char *header_name, size_t header_name_size, const char *header_value, size_t header_value_size);
 
     bool uws_req_is_ancient(uws_req_t *res);
     bool uws_req_get_yield(uws_req_t *res);
     void uws_req_set_yield(uws_req_t *res, bool yield);
-    void uws_req_for_each_header(uws_req_t *res, uws_get_headers_server_handler handler, void *user_data);
+    void uws_req_for_each_header(uws_req_t *res, uws_get_headers_server_handler handler);
     size_t uws_req_get_url(uws_req_t *res, const char **dest);
     size_t uws_req_get_full_url(uws_req_t *res, const char **dest);
     size_t uws_req_get_method(uws_req_t *res, const char **dest);
@@ -196,7 +196,6 @@ extern "C"
     } uws_socket_behavior_t;
 
     void uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior);
-    void *uws_ws_get_user_data(uws_websocket_t *ws);
     void uws_ws_close(uws_websocket_t *ws);
     uws_sendstatus_t uws_ws_send(uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode);
     uws_sendstatus_t uws_ws_send_with_options(uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode, bool compress, bool fin);
@@ -205,7 +204,7 @@ extern "C"
     uws_sendstatus_t uws_ws_send_first_fragment_with_opcode(uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode, bool compress);
     uws_sendstatus_t uws_ws_send_last_fragment(uws_websocket_t *ws, const char *message, size_t length, bool compress);
     void uws_ws_end(uws_websocket_t *ws, int code, const char *message, size_t length);
-    void uws_ws_cork(uws_websocket_t *ws, void (*handler)(void *user_data), void *user_data);
+    void uws_ws_cork(uws_websocket_t *ws, void (*handler)());
     bool uws_ws_subscribe(uws_websocket_t *ws, const char *topic, size_t length);
     bool uws_ws_unsubscribe(uws_websocket_t *ws, const char *topic, size_t length);
     bool uws_ws_is_subscribed(uws_websocket_t *ws, const char *topic, size_t length);
@@ -218,7 +217,7 @@ extern "C"
 
 #pragma endregion
 
-    void uws_loop_defer(struct us_loop_t *loop, void(cb(void *user_data)), void *user_data);
+    void uws_loop_defer(struct us_loop_t *loop, void(cb()));
     struct us_loop_t *uws_get_loop();
     struct us_loop_t *uws_get_loop_with_native(void *existing_native_loop);
 

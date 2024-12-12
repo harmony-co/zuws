@@ -59,10 +59,10 @@ void uws_res_end(uws_res_t *res, const char *data, size_t length, bool close_con
     ((uWS::HttpResponse<false> *)res)->end(std::string_view(data, length), close_connection);
 }
 
-void uws_res_cork(uws_res_t *res, void (*callback)(uws_res_t *res, void *user_data), void *user_data)
+void uws_res_cork(uws_res_t *res, void (*callback)(uws_res_t *res))
 {
     ((uWS::HttpResponse<false> *)res)->cork([=]()
-                                            { callback(res, user_data); });
+                                            { callback(res); });
 }
 
 void uws_res_pause(uws_res_t *res)
@@ -185,11 +185,11 @@ void uws_req_set_yield(uws_req_t *res, bool yield)
     return ((uWS::HttpRequest *)res)->setYield(yield);
 }
 
-void uws_req_for_each_header(uws_req_t *res, uws_get_headers_server_handler handler, void *user_data)
+void uws_req_for_each_header(uws_req_t *res, uws_get_headers_server_handler handler)
 {
     for (auto header : *((uWS::HttpRequest *)res))
     {
-        handler(header.first.data(), header.first.length(), header.second.data(), header.second.length(), user_data);
+        handler(header.first.data(), header.first.length(), header.second.data(), header.second.length());
     }
 }
 
@@ -302,12 +302,6 @@ void uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior)
     uwsApp->ws<void *>(pattern, std::move(generic_handler));
 }
 
-void *uws_ws_get_user_data(uws_websocket_t *ws)
-{
-    uWS::WebSocket<false, true, void *> *uws = (uWS::WebSocket<false, true, void *> *)ws;
-    return *uws->getUserData();
-}
-
 void uws_ws_close(uws_websocket_t *ws)
 {
     uWS::WebSocket<false, true, void *> *uws = (uWS::WebSocket<false, true, void *> *)ws;
@@ -356,11 +350,11 @@ void uws_ws_end(uws_websocket_t *ws, int code, const char *message, size_t lengt
     uws->end(code, std::string_view(message, length));
 }
 
-void uws_ws_cork(uws_websocket_t *ws, void (*handler)(void *user_data), void *user_data)
+void uws_ws_cork(uws_websocket_t *ws, void (*handler)())
 {
     uWS::WebSocket<false, true, void *> *uws = (uWS::WebSocket<false, true, void *> *)ws;
-    uws->cork([handler, user_data]()
-              { handler(user_data); });
+    uws->cork([handler]()
+              { handler(); });
 }
 
 bool uws_ws_subscribe(uws_websocket_t *ws, const char *topic, size_t length)
@@ -424,10 +418,10 @@ size_t uws_ws_get_remote_address_as_text(uws_websocket_t *ws, const char **dest)
 
 #pragma endregion
 
-void uws_loop_defer(us_loop_t *loop, void(cb(void *user_data)), void *user_data)
+void uws_loop_defer(us_loop_t *loop, void(cb()))
 {
-    ((uWS::Loop *)loop)->defer([cb, user_data]()
-                               { cb(user_data); });
+    ((uWS::Loop *)loop)->defer([cb]()
+                               { cb(); });
 }
 
 struct us_loop_t *uws_get_loop()

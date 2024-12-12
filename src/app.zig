@@ -11,52 +11,52 @@ pub const Response = struct {
     ptr: *c.uws_res_s,
 
     pub fn close(res: *const Response) void {
-        return c.uws_res_close(res.ptr);
+        c.uws_res_close(res.ptr);
     }
     pub fn end(res: *const Response, data: [:0]const u8, length: usize, closeConnection: bool) void {
-        return c.uws_res_end(res.ptr, data, length, closeConnection);
+        c.uws_res_end(res.ptr, data, length, closeConnection);
     }
     pub fn cork(res: *const Response, callback: ?*const fn (*const Response, ?*anyopaque) callconv(.C) void, userData: ?*anyopaque) void {
-        return c.uws_res_cork(res.ptr, callback, userData);
+        c.uws_res_cork(res.ptr, callback, userData);
     }
     pub fn pause(res: *const Response) void {
-        return c.uws_res_pause(res.ptr);
+        c.uws_res_pause(res.ptr);
     }
     pub fn restart(res: *const Response) void {
-        return c.uws_res_resume(res.ptr);
+        c.uws_res_resume(res.ptr);
     }
     pub fn writeContinue(res: *const Response) void {
-        return c.uws_res_write_continue(res.ptr);
+        c.uws_res_write_continue(res.ptr);
     }
     pub fn writeStatus(res: *const Response, status: [:0]const u8, length: usize) void {
-        return c.uws_res_write_status(res.ptr, status, length);
+        c.uws_res_write_status(res.ptr, status, length);
     }
     pub fn writeHeader(res: *const Response, key: [:0]const u8, keyLength: usize, value: [:0]const u8, valueLength: usize) void {
-        return c.uws_res_write_header(res.ptr, key, keyLength, value, valueLength);
+        c.uws_res_write_header(res.ptr, key, keyLength, value, valueLength);
     }
     pub fn writeHeaderInt(res: *const Response, key: [:0]const u8, keyLength: usize, value: u64) void {
-        return c.uws_res_write_header_int(res.ptr, key, keyLength, value);
+        c.uws_res_write_header_int(res.ptr, key, keyLength, value);
     }
     pub fn endWithoutBody(res: *const Response, closeConnection: bool) void {
-        return c.uws_res_end_without_body(res.ptr, closeConnection);
+        c.uws_res_end_without_body(res.ptr, closeConnection);
     }
     pub fn write(res: *const Response, data: [:0]const u8, length: usize) bool {
         return c.uws_res_write(res.ptr, data, length);
     }
     pub fn overrideWriteOffset(res: *const Response, offset: c_ulong) void {
-        return c.uws_res_override_write_offset(res.ptr, offset);
+        c.uws_res_override_write_offset(res.ptr, offset);
     }
     pub fn hasResponded(res: *const Response) bool {
         return c.uws_res_has_responded(res.ptr);
     }
     pub fn onWritable(res: *const Response, handler: c.uws_res_on_writable_handler, userData: ?*anyopaque) void {
-        return c.uws_res_on_writable(res.ptr, handler, userData);
+        c.uws_res_on_writable(res.ptr, handler, userData);
     }
     pub fn onAborted(res: *const Response, handler: c.uws_res_on_aborted_handler, optionalData: ?*anyopaque) void {
-        return c.uws_res_on_aborted(res.ptr, handler, optionalData);
+        c.uws_res_on_aborted(res.ptr, handler, optionalData);
     }
     pub fn onData(res: *const Response, handler: c.uws_res_on_data_handler, optionalData: ?*anyopaque) void {
-        return c.uws_res_on_data(res.ptr, handler, optionalData);
+        c.uws_res_on_data(res.ptr, handler, optionalData);
     }
     pub fn upgrade(res: *const Response, data: ?*anyopaque, secWebSocketKey: [:0]const u8, secWebSocketKeyLength: usize, secWebSocketProtocol: [:0]const u8, secWebSocketProtocolLength: usize, secWebSocketExtensions: [:0]const u8, secWebSocketExtensionsLength: usize, ws: ?*c.uws_socket_context_t) void {
         return c.uws_res_upgrade(res.ptr, data, secWebSocketKey, secWebSocketKeyLength, secWebSocketProtocol, secWebSocketProtocolLength, secWebSocketExtensions, secWebSocketExtensionsLength, ws);
@@ -85,10 +85,10 @@ pub const Request = struct {
         return c.uws_req_get_yield(res);
     }
     pub fn setYield(res: *const Request, yield: bool) void {
-        return c.uws_req_set_yield(res, yield);
+        c.uws_req_set_yield(res, yield);
     }
     pub fn forEachHeader(res: *const Request, handler: c.uws_get_headers_server_handler, userData: ?*anyopaque) void {
-        return c.uws_req_for_each_header(res, handler, userData);
+        c.uws_req_for_each_header(res, handler, userData);
     }
     pub fn getUrl(res: *const Request, dest: *[:0]const u8) usize {
         return c.uws_req_get_url(res, dest);

@@ -16,8 +16,8 @@ pub const Response = struct {
     pub fn end(res: *const Response, data: [:0]const u8, length: usize, closeConnection: bool) void {
         c.uws_res_end(res.ptr, data, length, closeConnection);
     }
-    pub fn cork(res: *const Response, callback: ?*const fn (*const Response, ?*anyopaque) callconv(.C) void, userData: ?*anyopaque) void {
-        c.uws_res_cork(res.ptr, callback, userData);
+    pub fn cork(res: *const Response, callback: ?*const fn (*const Response, ?*anyopaque) callconv(.C) void) void {
+        c.uws_res_cork(res.ptr, callback);
     }
     pub fn pause(res: *const Response) void {
         c.uws_res_pause(res.ptr);
@@ -49,8 +49,8 @@ pub const Response = struct {
     pub fn hasResponded(res: *const Response) bool {
         return c.uws_res_has_responded(res.ptr);
     }
-    pub fn onWritable(res: *const Response, handler: c.uws_res_on_writable_handler, userData: ?*anyopaque) void {
-        c.uws_res_on_writable(res.ptr, handler, userData);
+    pub fn onWritable(res: *const Response, handler: c.uws_res_on_writable_handler) void {
+        c.uws_res_on_writable(res.ptr, handler);
     }
     pub fn onAborted(res: *const Response, handler: c.uws_res_on_aborted_handler, optionalData: ?*anyopaque) void {
         c.uws_res_on_aborted(res.ptr, handler, optionalData);
@@ -87,8 +87,8 @@ pub const Request = struct {
     pub fn setYield(res: *const Request, yield: bool) void {
         c.uws_req_set_yield(res, yield);
     }
-    pub fn forEachHeader(res: *const Request, handler: c.uws_get_headers_server_handler, userData: ?*anyopaque) void {
-        c.uws_req_for_each_header(res, handler, userData);
+    pub fn forEachHeader(res: *const Request, handler: c.uws_get_headers_server_handler) void {
+        c.uws_req_for_each_header(res, handler);
     }
     pub fn getUrl(res: *const Request, dest: *[:0]const u8) usize {
         return c.uws_req_get_url(res, dest);

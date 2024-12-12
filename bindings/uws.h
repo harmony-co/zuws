@@ -12,13 +12,15 @@ extern "C"
 {
 #endif
     struct uws_app_s;
-    struct uws_req_s;
-    struct uws_res_s;
-    struct uws_socket_context_s;
     typedef struct uws_app_s uws_app_t;
-    typedef struct uws_req_s uws_req_t;
+    struct uws_res_s;
     typedef struct uws_res_s uws_res_t;
+    struct uws_req_s;
+    typedef struct uws_req_s uws_req_t;
+    struct uws_socket_context_s;
     typedef struct uws_socket_context_s uws_socket_context_t;
+    struct uws_websocket_s;
+    typedef struct uws_websocket_s uws_websocket_t;
 
     typedef struct
     {
@@ -90,15 +92,15 @@ extern "C"
 #pragma endregion
 #pragma region uWs-Response
 
+    typedef bool (*uws_res_on_writable_handler)(uws_res_t *res, uintmax_t, void *optional_data);
+    typedef bool (*uws_res_on_aborted_handler)(uws_res_t *res, void *optional_data);
+    typedef void (*uws_res_on_data_handler)(uws_res_t *res, const char *chunk, size_t chunk_length, bool is_end, void *optional_data);
+
     typedef struct
     {
         bool ok;
         bool has_responded;
     } uws_try_end_result_t;
-
-    typedef bool (*uws_res_on_writable_handler)(uws_res_t *res, uintmax_t, void *optional_data);
-    typedef bool (*uws_res_on_aborted_handler)(uws_res_t *res, void *optional_data);
-    typedef void (*uws_res_on_data_handler)(uws_res_t *res, const char *chunk, size_t chunk_length, bool is_end, void *optional_data);
 
     void uws_res_close(uws_res_t *res);
     void uws_res_end(uws_res_t *res, const char *data, size_t length, bool close_connection);
@@ -153,8 +155,12 @@ extern "C"
         PONG = 10
     } uws_opcode_t;
 
-    struct uws_websocket_s;
-    typedef struct uws_websocket_s uws_websocket_t;
+    typedef enum
+    {
+        BACKPRESSURE,
+        SUCCESS,
+        DROPPED
+    } uws_sendstatus_t;
 
     typedef void (*uws_websocket_handler)(uws_websocket_t *ws);
     typedef void (*uws_websocket_message_handler)(uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode);
@@ -188,13 +194,6 @@ extern "C"
         uws_websocket_close_handler close;
         uws_websocket_subscription_handler subscription;
     } uws_socket_behavior_t;
-
-    typedef enum
-    {
-        BACKPRESSURE,
-        SUCCESS,
-        DROPPED
-    } uws_sendstatus_t;
 
     void uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior);
     void *uws_ws_get_user_data(uws_websocket_t *ws);

@@ -16,7 +16,7 @@ pub const Response = struct {
     pub fn end(res: *const Response, data: [:0]const u8, length: usize, close_connection: bool) void {
         c.uws_res_end(res.ptr, data, length, close_connection);
     }
-    pub fn cork(res: *const Response, callback: ?*const fn (*const Response, ?*anyopaque) callconv(.C) void) void {
+    pub fn cork(res: *const Response, callback: ?*const fn (*const Response) callconv(.C) void) void {
         c.uws_res_cork(res.ptr, callback);
     }
     pub fn pause(res: *const Response) void {

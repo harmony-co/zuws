@@ -11,8 +11,8 @@ fn handlerWrapper(ptr: ?*anyopaque, rawRes: ?*c.uws_res_s, rawReq: ?*c.uws_req_s
     const handler_ptr: MethodHandler = @ptrCast(@alignCast(ptr));
     // WTF ZIG PLS FIX
     // if (rawRes == null or rawReq == null) return;
-    var res = Response{ .ptr = if (rawRes) |r| r else return };
-    var req = Request{ .ptr = if (rawReq) |r| r else return };
+    var res = Response{ .ptr = rawRes orelse return };
+    var req = Request{ .ptr = rawReq orelse return };
     handler_ptr(&res, &req);
 }
 

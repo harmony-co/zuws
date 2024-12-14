@@ -1,10 +1,10 @@
 const std = @import("std");
-const App = @import("./app.zig").App;
+const App = @import("./app.zig");
 
 const c = @import("uws");
 
 pub fn main() !void {
-    const app = try App.init();
+    const app = try App.App.init();
     defer app.deinit();
 
     try app
@@ -13,10 +13,10 @@ pub fn main() !void {
         .listen(3000, null);
 }
 
-fn hello(res: ?*c.uws_res_t, req: ?*c.uws_req_t) callconv(.C) void {
+fn hello(res: App.Response, req: App.Request) void {
     _ = req;
     const str = "Hello World!\n";
-    c.uws_res_end(res, str, str.len, false);
+    res.end(str, str.len, false);
 }
 
 fn on_upgrade(res: ?*c.uws_res_t, req: ?*c.uws_req_t, context: ?*c.uws_socket_context_t) callconv(.C) void {

@@ -7,6 +7,18 @@ pub const uWSError = error{
 
 const MethodHandler = *const fn (*Response, *Request) void;
 
+fn handlerWrapper(ptr: ?*anyopaque, rawRes: ?*c.uws_res_s, rawReq: ?*c.uws_req_s) callconv(.C) void {
+    const handler_ptr: MethodHandler = @ptrCast(@alignCast(ptr));
+    // WTF ZIG PLS FIX
+    // if (rawRes == null or rawReq == null) return;
+    var res = Response{ .ptr = if (rawRes) |r| r else return };
+    var req = Request{ .ptr = if (rawReq) |r| r else return };
+    handler_ptr(
+        &res,
+        &req,
+    );
+}
+
 pub const Response = struct {
     ptr: *c.uws_res_s,
 
@@ -74,18 +86,33 @@ pub const Response = struct {
         c.uws_res_on_data(res.ptr, handler);
     }
 
+    const UpgradeSocketOptions = struct {
+        key: [:0]const u8 = null,
+        protocol: [:0]const u8 = null,
+        extensions: [:0]const u8 = null,
+    };
+
     pub fn upgrade(
         res: *const Response,
-        data: ?*anyopaque,
-        sec_web_socket: [:0]const u8,
-        sec_web_socket_length: usize,
-        sec_web_socket_Protocol: [:0]const u8,
-        sec_web_socket_protocol_length: usize,
-        sec_web_socket_extensions: [:0]const u8,
-        sec_web_socket_extensions_length: usize,
+        req: *const Request,
+        socket: UpgradeSocketOptions,
         ws: ?*c.uws_socket_context_t,
     ) void {
-        return c.uws_res_upgrade(res.ptr, data, sec_web_socket, sec_web_socket_length, sec_web_socket_Protocol, sec_web_socket_protocol_length, sec_web_socket_extensions, sec_web_socket_extensions_length, ws);
+        const ws_key_length: usize = c.uws_req_get_header(req.ptr, "sec-websocket-key", 17, &socket.key);
+        const ws_protocol_length: usize = c.uws_req_get_header(req.ptr, "sec-websocket-protocol", 22, &socket.protocol);
+        const ws_extensions_length: usize = c.uws_req_get_header(req.ptr, "sec-websocket-extensions", 24, &socket.extensions);
+
+        c.uws_res_upgrade(
+            res,
+            null,
+            socket.key,
+            ws_key_length,
+            socket.protocol,
+            ws_protocol_length,
+            socket.extensions,
+            ws_extensions_length,
+            ws,
+        );
     }
 
     pub fn tryEnd(res: *const Response, data: [:0]const u8, length: usize, totalSize: c_ulong, close_connection: bool) c.uws_try_end_result_t {
@@ -152,18 +179,6 @@ pub const Request = struct {
         return c.uws_req_get_parameter(res.ptr, index, dest);
     }
 };
-
-fn handlerWrapper(ptr: ?*anyopaque, rawRes: ?*c.uws_res_s, rawReq: ?*c.uws_req_s) callconv(.C) void {
-    const handler_ptr: MethodHandler = @ptrCast(@alignCast(ptr));
-    // WTF ZIG PLS FIX
-    // if (rawRes == null or rawReq == null) return;
-    var res = Response{ .ptr = if (rawRes) |r| r else return };
-    var req = Request{ .ptr = if (rawReq) |r| r else return };
-    handler_ptr(
-        &res,
-        &req,
-    );
-}
 
 pub const App = struct {
     ptr: *c.uws_app_s,

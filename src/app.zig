@@ -7,16 +7,13 @@ pub const uWSError = error{
 
 const MethodHandler = *const fn (*Response, *Request) void;
 
-pub fn handlerWrapper(ptr: ?*anyopaque, rawRes: ?*c.uws_res_s, rawReq: ?*c.uws_req_s) callconv(.C) void {
+fn handlerWrapper(ptr: ?*anyopaque, rawRes: ?*c.uws_res_s, rawReq: ?*c.uws_req_s) callconv(.C) void {
     const handler_ptr: MethodHandler = @ptrCast(@alignCast(ptr));
     // WTF ZIG PLS FIX
     // if (rawRes == null or rawReq == null) return;
     var res = Response{ .ptr = if (rawRes) |r| r else return };
     var req = Request{ .ptr = if (rawReq) |r| r else return };
-    handler_ptr(
-        &res,
-        &req,
-    );
+    handler_ptr(&res, &req);
 }
 
 pub const Response = struct {
@@ -86,31 +83,27 @@ pub const Response = struct {
         c.uws_res_on_data(res.ptr, handler);
     }
 
-    const UpgradeSocketOptions = struct {
-        key: [:0]const u8 = null,
-        protocol: [:0]const u8 = null,
-        extensions: [:0]const u8 = null,
-    };
-
     pub fn upgrade(
         res: *const Response,
         req: *const Request,
-        socket: UpgradeSocketOptions,
         ws: ?*c.uws_socket_context_t,
     ) void {
-        const ws_key_length: usize = c.uws_req_get_header(req.ptr, "sec-websocket-key", 17, &socket.key);
-        const ws_protocol_length: usize = c.uws_req_get_header(req.ptr, "sec-websocket-protocol", 22, &socket.protocol);
-        const ws_extensions_length: usize = c.uws_req_get_header(req.ptr, "sec-websocket-extensions", 24, &socket.extensions);
+        var ws_key: [*c]const u8 = undefined;
+        var ws_protocol: [*c]const u8 = undefined;
+        var ws_extensions: [*c]const u8 = undefined;
+        const ws_key_len = c.uws_req_get_header(req.ptr, "sec-websocket-key", 17, &ws_key);
+        const ws_protocol_len = c.uws_req_get_header(req.ptr, "sec-websocket-protocol", 22, &ws_protocol);
+        const ws_extensions_len = c.uws_req_get_header(req.ptr, "sec-websocket-extensions", 24, &ws_extensions);
 
         c.uws_res_upgrade(
-            res,
+            res.ptr,
             null,
-            socket.key,
-            ws_key_length,
-            socket.protocol,
-            ws_protocol_length,
-            socket.extensions,
-            ws_extensions_length,
+            ws_key,
+            ws_key_len,
+            ws_protocol,
+            ws_protocol_len,
+            ws_extensions,
+            ws_extensions_len,
             ws,
         );
     }

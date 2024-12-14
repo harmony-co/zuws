@@ -2,7 +2,7 @@ const std = @import("std");
 const App = @import("./app.zig").App;
 const Response = @import("./app.zig").Response;
 const Request = @import("./app.zig").Request;
-const handlerWrapper = @import("./app.zig").handlerWrapper;
+const MethodHandler = @import("./app.zig").MethodHandler;
 
 const c = @import("uws");
 
@@ -13,11 +13,20 @@ pub fn main() !void {
     try app.get("/get", hello)
         .ws("/ws", .{
         .maxPayloadLength = 1024,
-        .upgrade = .{ .handler = handlerWrapper, .ptr = on_upgrade },
+        .upgrade = .{ .handler = handlerWrapper, .ptr = @constCast(&on_upgrade) },
         .open = on_open,
         .close = on_close,
         .message = on_message,
     }).listen(3000, null);
+}
+
+fn handlerWrapper(ptr: ?*anyopaque, rawRes: ?*c.uws_res_s, rawReq: ?*c.uws_req_t, context: ?*c.uws_socket_context_t) callconv(.C) void {
+    const handler_ptr: *const fn (*Response, *Request, ?*c.uws_socket_context_t) void = @ptrCast(@alignCast(ptr));
+    // WTF ZIG PLS FIX
+    // if (rawRes == null or rawReq == null) return;
+    var res = Response{ .ptr = if (rawRes) |r| r else return };
+    var req = Request{ .ptr = if (rawReq) |r| r else return };
+    handler_ptr(&res, &req, context);
 }
 
 fn hello(res: *Response, req: *Request) void {
@@ -26,8 +35,8 @@ fn hello(res: *Response, req: *Request) void {
     res.end(str, str.len, false);
 }
 
-fn on_upgrade(res: *Response, req: ?*c.uws_req_t, context: ?*c.uws_socket_context_t) callconv(.C) void {
-    res.upgrade(req, .{}, context);
+fn on_upgrade(res: *Response, req: *Request, context: ?*c.uws_socket_context_t) void {
+    res.upgrade(req, context);
 }
 
 fn on_open(ws: ?*c.uws_websocket_t) callconv(.C) void {

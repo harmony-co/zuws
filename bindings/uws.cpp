@@ -266,42 +266,70 @@ void uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior)
             handler(ptr, (uws_res_t *)res, (uws_req_t *)req, (uws_socket_context_t *)context);
         };
     }
-    if (behavior.open)
-        generic_handler.open = [behavior](auto *ws)
+    if (behavior.open.handler)
+    {
+        auto handler = behavior.open.handler;
+        auto ptr = behavior.open.ptr;
+        generic_handler.open = [handler, ptr](auto *ws)
         {
-            behavior.open((uws_websocket_t *)ws);
+            handler(ptr, (uws_websocket_t *)ws);
         };
-    if (behavior.message)
-        generic_handler.message = [behavior](auto *ws, auto message, auto opcode)
-        {
-            behavior.message((uws_websocket_t *)ws, message.data(), message.length(), (uws_opcode_t)opcode);
-        };
-    if (behavior.drain)
-        generic_handler.drain = [behavior](auto *ws)
-        {
-            behavior.drain((uws_websocket_t *)ws);
-        };
-    if (behavior.ping)
-        generic_handler.ping = [behavior](auto *ws, auto message)
-        {
-            behavior.ping((uws_websocket_t *)ws, message.data(), message.length());
-        };
-    if (behavior.pong)
-        generic_handler.pong = [behavior](auto *ws, auto message)
-        {
-            behavior.pong((uws_websocket_t *)ws, message.data(), message.length());
-        };
-    if (behavior.close)
-        generic_handler.close = [behavior](auto *ws, int code, auto message)
-        {
-            behavior.close((uws_websocket_t *)ws, code, message.data(), message.length());
-        };
-    if (behavior.subscription)
-        generic_handler.subscription = [behavior](auto *ws, auto topic, int subscribers, int old_subscribers)
-        {
-            behavior.subscription((uws_websocket_t *)ws, topic.data(), topic.length(), subscribers, old_subscribers);
-        };
+    }
+    if (behavior.message.handler)
+    {
+        auto handler = behavior.message.handler;
+        auto ptr = behavior.message.ptr;
 
+        generic_handler.message = [handler, ptr](auto *ws, auto message, auto opcode)
+        {
+            handler(ptr, (uws_websocket_t *)ws, message.data(), message.length(), (uws_opcode_t)opcode);
+        };
+    }
+    if (behavior.drain.handler)
+    {
+        auto handler = behavior.drain.handler;
+        auto ptr = behavior.drain.ptr;
+        generic_handler.drain = [handler, ptr](auto *ws)
+        {
+            handler(ptr, (uws_websocket_t *)ws);
+        };
+    }
+    if (behavior.ping.handler)
+    {
+        auto handler = behavior.ping.handler;
+        auto ptr = behavior.ping.ptr;
+        generic_handler.ping = [handler, ptr](auto *ws, auto message)
+        {
+            handler(ptr, (uws_websocket_t *)ws, message.data(), message.length());
+        };
+    }
+    if (behavior.pong.handler)
+    {
+        auto handler = behavior.pong.handler;
+        auto ptr = behavior.pong.ptr;
+        generic_handler.pong = [handler, ptr](auto *ws, auto message)
+        {
+            handler(ptr, (uws_websocket_t *)ws, message.data(), message.length());
+        };
+    }
+    if (behavior.close.handler)
+    {
+        auto handler = behavior.close.handler;
+        auto ptr = behavior.close.ptr;
+        generic_handler.close = [handler, ptr](auto *ws, int code, auto message)
+        {
+            handler(ptr, (uws_websocket_t *)ws, code, message.data(), message.length());
+        };
+    }
+    if (behavior.subscription.handler)
+    {
+        auto handler = behavior.subscription.handler;
+        auto ptr = behavior.subscription.ptr;
+        generic_handler.subscription = [handler, ptr](auto *ws, auto topic, int subscribers, int old_subscribers)
+        {
+            handler(ptr, (uws_websocket_t *)ws, topic.data(), topic.length(), subscribers, old_subscribers);
+        };
+    }
     uWS::App *uwsApp = (uWS::App *)app;
     uwsApp->ws<void *>(pattern, std::move(generic_handler));
 }

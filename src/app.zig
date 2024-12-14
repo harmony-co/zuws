@@ -167,16 +167,12 @@ fn handlerWrapper(ptr: ?*anyopaque, rawRes: ?*c.uws_res_s, rawReq: ?*c.uws_req_s
 
 pub const App = struct {
     ptr: *c.uws_app_s,
-    allocator: std.mem.Allocator,
 
-    pub fn init(allocator: std.mem.Allocator) uWSError!App {
+    pub fn init() uWSError!App {
         const app = c.uws_create_app();
 
         if (app) |ptr| {
-            return .{
-                .ptr = ptr,
-                .allocator = allocator,
-            };
+            return .{ .ptr = ptr };
         }
 
         return uWSError.CouldNotCreateApp;
@@ -197,7 +193,7 @@ pub const App = struct {
         c.uws_app_run(app.ptr);
     }
 
-    pub fn get(app: *const App, pattern: [:0]const u8, handler: method_handler) !*const App {
+    pub fn get(app: *const App, pattern: [:0]const u8, handler: method_handler) *const App {
         c.uws_app_get(app.ptr, pattern, handlerWrapper, @constCast(handler));
         return app;
     }

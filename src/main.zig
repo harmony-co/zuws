@@ -6,15 +6,12 @@ const Request = @import("./app.zig").Request;
 const c = @import("uws");
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    const allocator = gpa.allocator();
-
-    const app = try App.init(allocator);
+    const app = try App.init();
     defer app.deinit();
 
-    _ = try app.get("/get", hello);
+    try app.get("/get", hello)
     // .ws("/ws", .{ .maxPayloadLength = 1024, .upgrade = on_upgrade, .open = on_open, .close = on_close, .message = on_message })
-    try app.listen(3000, null);
+        .listen(3000, null);
 }
 
 fn hello(res: *Response, req: *Request) void {

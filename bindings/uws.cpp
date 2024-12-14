@@ -245,6 +245,14 @@ size_t uws_req_get_parameter(uws_req_t *res, unsigned short index, const char **
 #pragma endregion
 #pragma region uWS-Websockets
 
+#define WEBSOCKET_HANDLER(field, lambda_args, lambda_body)        \
+    if (behavior.field.handler)                                           \
+    {                                                                     \
+        auto handler = behavior.field.handler;                            \
+        auto ptr = behavior.field.ptr;                                    \
+        generic_handler.field = [ handler, ptr ] lambda_args lambda_body; \
+    }
+
 void uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior)
 {
     auto generic_handler = uWS::App::WebSocketBehavior<void *>{
@@ -257,79 +265,39 @@ void uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior)
         .sendPingsAutomatically = behavior.sendPingsAutomatically,
         .maxLifetime = behavior.maxLifetime,
     };
-    if (behavior.upgrade.handler)
-    {
-        auto handler = behavior.upgrade.handler;
-        auto ptr = behavior.upgrade.ptr;
-        generic_handler.upgrade = [handler, ptr](auto *res, auto *req, auto *context)
-        {
-            handler(ptr, (uws_res_t *)res, (uws_req_t *)req, (uws_socket_context_t *)context);
-        };
-    }
-    if (behavior.open.handler)
-    {
-        auto handler = behavior.open.handler;
-        auto ptr = behavior.open.ptr;
-        generic_handler.open = [handler, ptr](auto *ws)
-        {
-            handler(ptr, (uws_websocket_t *)ws);
-        };
-    }
-    if (behavior.message.handler)
-    {
-        auto handler = behavior.message.handler;
-        auto ptr = behavior.message.ptr;
 
-        generic_handler.message = [handler, ptr](auto *ws, auto message, auto opcode)
-        {
-            handler(ptr, (uws_websocket_t *)ws, message.data(), message.length(), (uws_opcode_t)opcode);
-        };
-    }
-    if (behavior.drain.handler)
-    {
-        auto handler = behavior.drain.handler;
-        auto ptr = behavior.drain.ptr;
-        generic_handler.drain = [handler, ptr](auto *ws)
-        {
-            handler(ptr, (uws_websocket_t *)ws);
-        };
-    }
-    if (behavior.ping.handler)
-    {
-        auto handler = behavior.ping.handler;
-        auto ptr = behavior.ping.ptr;
-        generic_handler.ping = [handler, ptr](auto *ws, auto message)
-        {
-            handler(ptr, (uws_websocket_t *)ws, message.data(), message.length());
-        };
-    }
-    if (behavior.pong.handler)
-    {
-        auto handler = behavior.pong.handler;
-        auto ptr = behavior.pong.ptr;
-        generic_handler.pong = [handler, ptr](auto *ws, auto message)
-        {
-            handler(ptr, (uws_websocket_t *)ws, message.data(), message.length());
-        };
-    }
-    if (behavior.close.handler)
-    {
-        auto handler = behavior.close.handler;
-        auto ptr = behavior.close.ptr;
-        generic_handler.close = [handler, ptr](auto *ws, int code, auto message)
-        {
-            handler(ptr, (uws_websocket_t *)ws, code, message.data(), message.length());
-        };
-    }
-    if (behavior.subscription.handler)
-    {
-        auto handler = behavior.subscription.handler;
-        auto ptr = behavior.subscription.ptr;
-        generic_handler.subscription = [handler, ptr](auto *ws, auto topic, int subscribers, int old_subscribers)
-        {
-            handler(ptr, (uws_websocket_t *)ws, topic.data(), topic.length(), subscribers, old_subscribers);
-        };
-    }
+    WEBSOCKET_HANDLER(upgrade, (auto *res, auto *req, auto *context), {
+        handler(ptr, (uws_res_t *)res, (uws_req_t *)req, (uws_socket_context_t *)context);
+    });
+
+    WEBSOCKET_HANDLER(open, (auto *ws), {
+        handler(ptr, (uws_websocket_t *)ws);
+    });
+
+    WEBSOCKET_HANDLER(message, (auto *ws, auto message, auto opcode), {
+        handler(ptr, (uws_websocket_t *)ws, message.data(), message.length(), (uws_opcode_t)opcode);
+    });
+
+    WEBSOCKET_HANDLER(drain, (auto *ws), {
+        handler(ptr, (uws_websocket_t *)ws);
+    });
+
+    WEBSOCKET_HANDLER(ping, (auto *ws, auto message), {
+        handler(ptr, (uws_websocket_t *)ws, message.data(), message.length());
+    });
+
+    WEBSOCKET_HANDLER(pong, (auto *ws, auto message), {
+        handler(ptr, (uws_websocket_t *)ws, message.data(), message.length());
+    });
+
+    WEBSOCKET_HANDLER(close, (auto *ws, int code, auto message), {
+        handler(ptr, (uws_websocket_t *)ws, code, message.data(), message.length());
+    });
+
+    WEBSOCKET_HANDLER(subscription, (auto *ws, auto topic, int subscribers, int old_subscribers), {
+        handler(ptr, (uws_websocket_t *)ws, topic.data(), topic.length(), subscribers, old_subscribers);
+    });
+
     uWS::App *uwsApp = (uWS::App *)app;
     uwsApp->ws<void *>(pattern, std::move(generic_handler));
 }

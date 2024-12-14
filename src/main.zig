@@ -22,8 +22,6 @@ pub fn main() !void {
 
 fn upgradeWrapper(ptr: ?*anyopaque, rawRes: ?*c.uws_res_s, rawReq: ?*c.uws_req_t, context: ?*c.uws_socket_context_t) callconv(.C) void {
     const handler_ptr: *const fn (*Response, *Request, ?*c.uws_socket_context_t) void = @ptrCast(@alignCast(ptr));
-    // WTF ZIG PLS FIX
-    // if (rawRes == null or rawReq == null) return;
     var res = Response{ .ptr = rawRes orelse return };
     var req = Request{ .ptr = rawReq orelse return };
     handler_ptr(&res, &req, context);

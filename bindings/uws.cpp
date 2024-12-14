@@ -257,11 +257,15 @@ void uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior)
         .sendPingsAutomatically = behavior.sendPingsAutomatically,
         .maxLifetime = behavior.maxLifetime,
     };
-    if (behavior.upgrade)
-        generic_handler.upgrade = [behavior](auto *res, auto *req, auto *context)
+    if (behavior.upgrade.handler)
+    {
+        auto handler = behavior.upgrade.handler;
+        auto ptr = behavior.upgrade.ptr;
+        generic_handler.upgrade = [handler, ptr](auto *res, auto *req, auto *context)
         {
-            behavior.upgrade((uws_res_t *)res, (uws_req_t *)req, (uws_socket_context_t *)context);
+            handler(ptr, (uws_res_t *)res, (uws_req_t *)req, (uws_socket_context_t *)context);
         };
+    }
     if (behavior.open)
         generic_handler.open = [behavior](auto *ws)
         {

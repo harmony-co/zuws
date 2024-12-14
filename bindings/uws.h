@@ -166,7 +166,7 @@ extern "C"
     typedef void (*uws_websocket_message_handler)(uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode);
     typedef void (*uws_websocket_ping_pong_handler)(uws_websocket_t *ws, const char *message, size_t length);
     typedef void (*uws_websocket_close_handler)(uws_websocket_t *ws, int code, const char *message, size_t length);
-    typedef void (*uws_websocket_upgrade_handler)(uws_res_t *response, uws_req_t *request, uws_socket_context_t *context);
+    typedef void (*uws_websocket_upgrade_handler)(void *ptr, uws_res_t *response, uws_req_t *request, uws_socket_context_t *context);
     typedef void (*uws_websocket_subscription_handler)(uws_websocket_t *ws, const char *topic_name, size_t topic_name_length, int new_number_of_subscriber, int old_number_of_subscriber);
 
     typedef struct
@@ -185,7 +185,11 @@ extern "C"
         bool sendPingsAutomatically;
         /* Maximum socket lifetime in seconds before forced closure (defaults to disabled) */
         unsigned short maxLifetime;
-        uws_websocket_upgrade_handler upgrade;
+        struct
+        {
+            uws_websocket_upgrade_handler handler;
+            void *ptr;
+        } upgrade;
         uws_websocket_handler open;
         uws_websocket_message_handler message;
         uws_websocket_handler drain;

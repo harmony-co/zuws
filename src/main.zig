@@ -2,6 +2,7 @@ const std = @import("std");
 const App = @import("./app.zig").App;
 const Response = @import("./app.zig").Response;
 const Request = @import("./app.zig").Request;
+const handlerWrapper = @import("./app.zig").handlerWrapper;
 
 const c = @import("uws");
 
@@ -12,7 +13,7 @@ pub fn main() !void {
     try app.get("/get", hello)
         .ws("/ws", .{
         .maxPayloadLength = 1024,
-        .upgrade = on_upgrade,
+        .upgrade = .{ .handler = handlerWrapper, .ptr = on_upgrade },
         .open = on_open,
         .close = on_close,
         .message = on_message,

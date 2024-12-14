@@ -64,7 +64,7 @@ extern "C"
 #pragma region uWS-app
 
     typedef void (*uws_listen_handler)(struct us_listen_socket_t *listen_socket);
-    typedef void (*uws_method_handler)(uws_res_t *response, uws_req_t *request);
+    typedef void (*uws_method_handler)(void *ptr, uws_res_t *response, uws_req_t *request);
 
 #define HTTP_METHODS \
     METHOD(get)      \
@@ -79,7 +79,7 @@ extern "C"
     METHOD(any)
 
 #define METHOD(name) \
-    void uws_app_##name(uws_app_t *app, const char *pattern, uws_method_handler handler);
+    void uws_app_##name(uws_app_t *app, const char *pattern, uws_method_handler handler, void *ptr);
     HTTP_METHODS
 #undef METHOD
 

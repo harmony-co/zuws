@@ -5,7 +5,7 @@ pub const uWSError = error{
     CouldNotCreateApp,
 };
 
-const method_handler = *const fn (*Response, *Request) void;
+const MethodHandler = *const fn (*Response, *Request) void;
 
 pub const Response = struct {
     ptr: *c.uws_res_s,
@@ -154,7 +154,7 @@ pub const Request = struct {
 };
 
 fn handlerWrapper(ptr: ?*anyopaque, rawRes: ?*c.uws_res_s, rawReq: ?*c.uws_req_s) callconv(.C) void {
-    const handler_ptr: method_handler = @ptrCast(@alignCast(ptr));
+    const handler_ptr: MethodHandler = @ptrCast(@alignCast(ptr));
     // WTF ZIG PLS FIX
     // if (rawRes == null or rawReq == null) return;
     var res = Response{ .ptr = if (rawRes) |r| r else return };
@@ -193,52 +193,52 @@ pub const App = struct {
         c.uws_app_run(app.ptr);
     }
 
-    pub fn get(app: *const App, pattern: [:0]const u8, handler: method_handler) *const App {
+    pub fn get(app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
         c.uws_app_get(app.ptr, pattern, handlerWrapper, @constCast(handler));
         return app;
     }
 
-    pub fn post(app: *const App, pattern: [:0]const u8, handler: method_handler) *const App {
+    pub fn post(app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
         c.uws_app_post(app.ptr, pattern, handlerWrapper, @constCast(handler));
         return app;
     }
 
-    pub fn put(app: *const App, pattern: [:0]const u8, handler: method_handler) *const App {
+    pub fn put(app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
         c.uws_app_put(app.ptr, pattern, handlerWrapper, @constCast(handler));
         return app;
     }
 
-    pub fn options(app: *const App, pattern: [:0]const u8, handler: method_handler) *const App {
+    pub fn options(app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
         c.uws_app_options(app.ptr, pattern, handlerWrapper, @constCast(handler));
         return app;
     }
 
-    pub fn del(app: *const App, pattern: [:0]const u8, handler: method_handler) *const App {
+    pub fn del(app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
         c.uws_app_del(app.ptr, pattern, handlerWrapper, @constCast(handler));
         return app;
     }
 
-    pub fn patch(app: *const App, pattern: [:0]const u8, handler: method_handler) *const App {
+    pub fn patch(app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
         c.uws_app_patch(app.ptr, pattern, handlerWrapper, @constCast(handler));
         return app;
     }
 
-    pub fn head(app: *const App, pattern: [:0]const u8, handler: method_handler) *const App {
+    pub fn head(app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
         c.uws_app_head(app.ptr, pattern, handlerWrapper, @constCast(handler));
         return app;
     }
 
-    pub fn connect(app: *const App, pattern: [:0]const u8, handler: method_handler) *const App {
+    pub fn connect(app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
         c.uws_app_connect(app.ptr, pattern, handlerWrapper, @constCast(handler));
         return app;
     }
 
-    pub fn trace(app: *const App, pattern: [:0]const u8, handler: method_handler) *const App {
+    pub fn trace(app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
         c.uws_app_trace(app.ptr, pattern, handlerWrapper, @constCast(handler));
         return app;
     }
 
-    pub fn any(app: *const App, pattern: [:0]const u8, handler: method_handler) *const App {
+    pub fn any(app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
         c.uws_app_any(app.ptr, pattern, handlerWrapper, @constCast(handler));
         return app;
     }

@@ -4,10 +4,10 @@
 
 #pragma region uWS-app
 
-#define METHOD(name)                                                                                                        \
-    void uws_app_##name(uws_app_t *app, const char *pattern, uws_method_handler handler)                                    \
-    {                                                                                                                       \
-        ((uWS::App *)app)->name(pattern, [handler](auto *res, auto *req) { handler((uws_res_t *)res, (uws_req_t *)req); }); \
+#define METHOD(name)                                                                                                                  \
+    void uws_app_##name(uws_app_t *app, const char *pattern, uws_method_handler handler, void *ptr)                                   \
+    {                                                                                                                                 \
+        ((uWS::App *)app)->name(pattern, [handler, ptr](auto *res, auto *req) { handler(ptr, (uws_res_t *)res, (uws_req_t *)req); }); \
     };
 HTTP_METHODS
 #undef METHOD
@@ -59,10 +59,10 @@ void uws_res_end(uws_res_t *res, const char *data, size_t length, bool close_con
     ((uWS::HttpResponse<false> *)res)->end(std::string_view(data, length), close_connection);
 }
 
-void uws_res_cork(uws_res_t *res, void (*callback)(uws_res_t *res, void *user_data), void *user_data)
+void uws_res_cork(uws_res_t *res, void (*callback)(uws_res_t *res))
 {
     ((uWS::HttpResponse<false> *)res)->cork([=]()
-                                            { callback(res, user_data); });
+                                            { callback(res); });
 }
 
 void uws_res_pause(uws_res_t *res)
@@ -115,22 +115,22 @@ bool uws_res_has_responded(uws_res_t *res)
     return ((uWS::HttpResponse<false> *)res)->hasResponded();
 }
 
-void uws_res_on_writable(uws_res_t *res, uws_res_on_writable_handler handler, void *optional_data)
+void uws_res_on_writable(uws_res_t *res, uws_res_on_writable_handler handler)
 {
-    ((uWS::HttpResponse<false> *)res)->onWritable([handler, res, optional_data](uintmax_t a)
-                                                  { return handler(res, a, optional_data); });
+    ((uWS::HttpResponse<false> *)res)->onWritable([handler, res](uintmax_t a)
+                                                  { return handler(res, a); });
 }
 
-void uws_res_on_aborted(uws_res_t *res, uws_res_on_aborted_handler handler, void *optional_data)
+void uws_res_on_aborted(uws_res_t *res, uws_res_on_aborted_handler handler)
 {
-    ((uWS::HttpResponse<false> *)res)->onAborted([handler, res, optional_data]
-                                                 { handler(res, optional_data); });
+    ((uWS::HttpResponse<false> *)res)->onAborted([handler, res]
+                                                 { handler(res); });
 }
 
-void uws_res_on_data(uws_res_t *res, uws_res_on_data_handler handler, void *optional_data)
+void uws_res_on_data(uws_res_t *res, uws_res_on_data_handler handler)
 {
-    ((uWS::HttpResponse<false> *)res)->onData([handler, res, optional_data](auto chunk, bool is_end)
-                                              { handler(res, chunk.data(), chunk.length(), is_end, optional_data); });
+    ((uWS::HttpResponse<false> *)res)->onData([handler, res](auto chunk, bool is_end)
+                                              { handler(res, chunk.data(), chunk.length(), is_end); });
 }
 
 void uws_res_upgrade(uws_res_t *res, void *data, const char *sec_web_socket_key, size_t sec_web_socket_key_length, const char *sec_web_socket_protocol, size_t sec_web_socket_protocol_length, const char *sec_web_socket_extensions, size_t sec_web_socket_extensions_length, uws_socket_context_t *ws)
@@ -185,11 +185,11 @@ void uws_req_set_yield(uws_req_t *res, bool yield)
     return ((uWS::HttpRequest *)res)->setYield(yield);
 }
 
-void uws_req_for_each_header(uws_req_t *res, uws_get_headers_server_handler handler, void *user_data)
+void uws_req_for_each_header(uws_req_t *res, uws_get_headers_server_handler handler)
 {
     for (auto header : *((uWS::HttpRequest *)res))
     {
-        handler(header.first.data(), header.first.length(), header.second.data(), header.second.length(), user_data);
+        handler(header.first.data(), header.first.length(), header.second.data(), header.second.length());
     }
 }
 
@@ -257,55 +257,81 @@ void uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior)
         .sendPingsAutomatically = behavior.sendPingsAutomatically,
         .maxLifetime = behavior.maxLifetime,
     };
-    if (behavior.upgrade)
-        generic_handler.upgrade = [behavior](auto *res, auto *req, auto *context)
+    if (behavior.upgrade.handler)
+    {
+        auto handler = behavior.upgrade.handler;
+        auto ptr = behavior.upgrade.ptr;
+        generic_handler.upgrade = [handler, ptr](auto *res, auto *req, auto *context)
         {
-            behavior.upgrade((uws_res_t *)res, (uws_req_t *)req, (uws_socket_context_t *)context);
+            handler(ptr, (uws_res_t *)res, (uws_req_t *)req, (uws_socket_context_t *)context);
         };
-    if (behavior.open)
-        generic_handler.open = [behavior](auto *ws)
+    }
+    if (behavior.open.handler)
+    {
+        auto handler = behavior.open.handler;
+        auto ptr = behavior.open.ptr;
+        generic_handler.open = [handler, ptr](auto *ws)
         {
-            behavior.open((uws_websocket_t *)ws);
+            handler(ptr, (uws_websocket_t *)ws);
         };
-    if (behavior.message)
-        generic_handler.message = [behavior](auto *ws, auto message, auto opcode)
-        {
-            behavior.message((uws_websocket_t *)ws, message.data(), message.length(), (uws_opcode_t)opcode);
-        };
-    if (behavior.drain)
-        generic_handler.drain = [behavior](auto *ws)
-        {
-            behavior.drain((uws_websocket_t *)ws);
-        };
-    if (behavior.ping)
-        generic_handler.ping = [behavior](auto *ws, auto message)
-        {
-            behavior.ping((uws_websocket_t *)ws, message.data(), message.length());
-        };
-    if (behavior.pong)
-        generic_handler.pong = [behavior](auto *ws, auto message)
-        {
-            behavior.pong((uws_websocket_t *)ws, message.data(), message.length());
-        };
-    if (behavior.close)
-        generic_handler.close = [behavior](auto *ws, int code, auto message)
-        {
-            behavior.close((uws_websocket_t *)ws, code, message.data(), message.length());
-        };
-    if (behavior.subscription)
-        generic_handler.subscription = [behavior](auto *ws, auto topic, int subscribers, int old_subscribers)
-        {
-            behavior.subscription((uws_websocket_t *)ws, topic.data(), topic.length(), subscribers, old_subscribers);
-        };
+    }
+    if (behavior.message.handler)
+    {
+        auto handler = behavior.message.handler;
+        auto ptr = behavior.message.ptr;
 
+        generic_handler.message = [handler, ptr](auto *ws, auto message, auto opcode)
+        {
+            handler(ptr, (uws_websocket_t *)ws, message.data(), message.length(), (uws_opcode_t)opcode);
+        };
+    }
+    if (behavior.drain.handler)
+    {
+        auto handler = behavior.drain.handler;
+        auto ptr = behavior.drain.ptr;
+        generic_handler.drain = [handler, ptr](auto *ws)
+        {
+            handler(ptr, (uws_websocket_t *)ws);
+        };
+    }
+    if (behavior.ping.handler)
+    {
+        auto handler = behavior.ping.handler;
+        auto ptr = behavior.ping.ptr;
+        generic_handler.ping = [handler, ptr](auto *ws, auto message)
+        {
+            handler(ptr, (uws_websocket_t *)ws, message.data(), message.length());
+        };
+    }
+    if (behavior.pong.handler)
+    {
+        auto handler = behavior.pong.handler;
+        auto ptr = behavior.pong.ptr;
+        generic_handler.pong = [handler, ptr](auto *ws, auto message)
+        {
+            handler(ptr, (uws_websocket_t *)ws, message.data(), message.length());
+        };
+    }
+    if (behavior.close.handler)
+    {
+        auto handler = behavior.close.handler;
+        auto ptr = behavior.close.ptr;
+        generic_handler.close = [handler, ptr](auto *ws, int code, auto message)
+        {
+            handler(ptr, (uws_websocket_t *)ws, code, message.data(), message.length());
+        };
+    }
+    if (behavior.subscription.handler)
+    {
+        auto handler = behavior.subscription.handler;
+        auto ptr = behavior.subscription.ptr;
+        generic_handler.subscription = [handler, ptr](auto *ws, auto topic, int subscribers, int old_subscribers)
+        {
+            handler(ptr, (uws_websocket_t *)ws, topic.data(), topic.length(), subscribers, old_subscribers);
+        };
+    }
     uWS::App *uwsApp = (uWS::App *)app;
     uwsApp->ws<void *>(pattern, std::move(generic_handler));
-}
-
-void *uws_ws_get_user_data(uws_websocket_t *ws)
-{
-    uWS::WebSocket<false, true, void *> *uws = (uWS::WebSocket<false, true, void *> *)ws;
-    return *uws->getUserData();
 }
 
 void uws_ws_close(uws_websocket_t *ws)
@@ -356,11 +382,11 @@ void uws_ws_end(uws_websocket_t *ws, int code, const char *message, size_t lengt
     uws->end(code, std::string_view(message, length));
 }
 
-void uws_ws_cork(uws_websocket_t *ws, void (*handler)(void *user_data), void *user_data)
+void uws_ws_cork(uws_websocket_t *ws, void (*handler)())
 {
     uWS::WebSocket<false, true, void *> *uws = (uWS::WebSocket<false, true, void *> *)ws;
-    uws->cork([handler, user_data]()
-              { handler(user_data); });
+    uws->cork([handler]()
+              { handler(); });
 }
 
 bool uws_ws_subscribe(uws_websocket_t *ws, const char *topic, size_t length)
@@ -424,10 +450,10 @@ size_t uws_ws_get_remote_address_as_text(uws_websocket_t *ws, const char **dest)
 
 #pragma endregion
 
-void uws_loop_defer(us_loop_t *loop, void(cb(void *user_data)), void *user_data)
+void uws_loop_defer(us_loop_t *loop, void(cb()))
 {
-    ((uWS::Loop *)loop)->defer([cb, user_data]()
-                               { cb(user_data); });
+    ((uWS::Loop *)loop)->defer([cb]()
+                               { cb(); });
 }
 
 struct us_loop_t *uws_get_loop()

@@ -8,5 +8,6 @@ orelse
 usize
 isize
 anytype
+anyopaque
 
 deinit

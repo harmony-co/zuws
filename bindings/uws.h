@@ -163,13 +163,13 @@ extern "C"
     } uws_sendstatus_t;
 
 #define WEBSOCKET_HANDLERS(...)                                                                                  \
+    HANDLE(upgrade, (__VA_ARGS__ uws_res_t * response, uws_req_t * request, uws_socket_context_t * context))     \
     HANDLE(open, (__VA_ARGS__ uws_websocket_t * ws))                                                             \
-    HANDLE(drain, (__VA_ARGS__ uws_websocket_t * ws))                                                            \
     HANDLE(message, (__VA_ARGS__ uws_websocket_t * ws, const char *message, size_t length, uws_opcode_t opcode)) \
+    HANDLE(drain, (__VA_ARGS__ uws_websocket_t * ws))                                                            \
     HANDLE(ping, (__VA_ARGS__ uws_websocket_t * ws, const char *message, size_t length))                         \
     HANDLE(pong, (__VA_ARGS__ uws_websocket_t * ws, const char *message, size_t length))                         \
     HANDLE(close, (__VA_ARGS__ uws_websocket_t * ws, int code, const char *message, size_t length))              \
-    HANDLE(upgrade, (__VA_ARGS__ uws_res_t * response, uws_req_t * request, uws_socket_context_t * context))     \
     HANDLE(subscription, (__VA_ARGS__ uws_websocket_t * ws, const char *topic_name, size_t topic_name_length, int new_number_of_subscriber, int old_number_of_subscriber))
 
 #define HANDLE(name, args) \

@@ -245,7 +245,7 @@ size_t uws_req_get_parameter(uws_req_t *res, unsigned short index, const char **
 #pragma endregion
 #pragma region uWS-Websockets
 
-#define WEBSOCKET_HANDLER(field, lambda_args, lambda_body)        \
+#define WEBSOCKET_HANDLER(field, lambda_args, lambda_body)                \
     if (behavior.field.handler)                                           \
     {                                                                     \
         auto handler = behavior.field.handler;                            \

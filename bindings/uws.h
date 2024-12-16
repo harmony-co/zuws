@@ -162,21 +162,19 @@ extern "C"
         DROPPED
     } uws_sendstatus_t;
 
-#define COMMA , // Needed for placeholder argument values
-
-#define WEBSOCKET_HANDLERS(PLACEHOLDER_ARG)                                                                          \
-    HANDLE(open, (PLACEHOLDER_ARG uws_websocket_t * ws))                                                             \
-    HANDLE(drain, (PLACEHOLDER_ARG uws_websocket_t * ws))                                                            \
-    HANDLE(message, (PLACEHOLDER_ARG uws_websocket_t * ws, const char *message, size_t length, uws_opcode_t opcode)) \
-    HANDLE(ping, (PLACEHOLDER_ARG uws_websocket_t * ws, const char *message, size_t length))                         \
-    HANDLE(pong, (PLACEHOLDER_ARG uws_websocket_t * ws, const char *message, size_t length))                         \
-    HANDLE(close, (PLACEHOLDER_ARG uws_websocket_t * ws, int code, const char *message, size_t length))              \
-    HANDLE(upgrade, (PLACEHOLDER_ARG uws_res_t * response, uws_req_t * request, uws_socket_context_t * context))     \
-    HANDLE(subscription, (PLACEHOLDER_ARG uws_websocket_t * ws, const char *topic_name, size_t topic_name_length, int new_number_of_subscriber, int old_number_of_subscriber))
+#define WEBSOCKET_HANDLERS(...)                                                                          \
+    HANDLE(open, (__VA_ARGS__ uws_websocket_t * ws))                                                             \
+    HANDLE(drain, (__VA_ARGS__ uws_websocket_t * ws))                                                            \
+    HANDLE(message, (__VA_ARGS__ uws_websocket_t * ws, const char *message, size_t length, uws_opcode_t opcode)) \
+    HANDLE(ping, (__VA_ARGS__ uws_websocket_t * ws, const char *message, size_t length))                         \
+    HANDLE(pong, (__VA_ARGS__ uws_websocket_t * ws, const char *message, size_t length))                         \
+    HANDLE(close, (__VA_ARGS__ uws_websocket_t * ws, int code, const char *message, size_t length))              \
+    HANDLE(upgrade, (__VA_ARGS__ uws_res_t * response, uws_req_t * request, uws_socket_context_t * context))     \
+    HANDLE(subscription, (__VA_ARGS__ uws_websocket_t * ws, const char *topic_name, size_t topic_name_length, int new_number_of_subscriber, int old_number_of_subscriber))
 
 #define HANDLE(name, args) \
     typedef void(*uws_websocket_##name) args;
-    WEBSOCKET_HANDLERS(void *ptr COMMA)
+    WEBSOCKET_HANDLERS(void *ptr,)
 #undef HANDLE
 
 #define HANDLE(name, args)            \

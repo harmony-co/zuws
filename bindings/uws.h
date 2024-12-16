@@ -162,7 +162,7 @@ extern "C"
         DROPPED
     } uws_sendstatus_t;
 
-#define WEBSOCKET_HANDLERS(...)                                                                          \
+#define WEBSOCKET_HANDLERS(...)                                                                                  \
     HANDLE(open, (__VA_ARGS__ uws_websocket_t * ws))                                                             \
     HANDLE(drain, (__VA_ARGS__ uws_websocket_t * ws))                                                            \
     HANDLE(message, (__VA_ARGS__ uws_websocket_t * ws, const char *message, size_t length, uws_opcode_t opcode)) \
@@ -174,7 +174,7 @@ extern "C"
 
 #define HANDLE(name, args) \
     typedef void(*uws_websocket_##name) args;
-    WEBSOCKET_HANDLERS(void *ptr,)
+    WEBSOCKET_HANDLERS(void *ptr, )
 #undef HANDLE
 
 #define HANDLE(name, args)            \

@@ -162,47 +162,43 @@ extern "C"
         DROPPED
     } uws_sendstatus_t;
 
-    typedef void (*uws_websocket_open)(void *ptr, uws_websocket_t *ws);
-    typedef void (*uws_websocket_drain)(void *ptr, uws_websocket_t *ws);
-    typedef void (*uws_websocket_message)(void *ptr, uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode);
-    typedef void (*uws_websocket_ping)(void *ptr, uws_websocket_t *ws, const char *message, size_t length);
-    typedef void (*uws_websocket_pong)(void *ptr, uws_websocket_t *ws, const char *message, size_t length);
-    typedef void (*uws_websocket_close)(void *ptr, uws_websocket_t *ws, int code, const char *message, size_t length);
-    typedef void (*uws_websocket_upgrade)(void *ptr, uws_res_t *response, uws_req_t *request, uws_socket_context_t *context);
-    typedef void (*uws_websocket_subscription)(void *ptr, uws_websocket_t *ws, const char *topic_name, size_t topic_name_length, int new_number_of_subscriber, int old_number_of_subscriber);
+#define COMMA , // Needed for placeholder argument values
 
-#define SOCKET_HANDLER(name)          \
+#define WEBSOCKET_HANDLERS(PLACEHOLDER_ARG)                                                                          \
+    HANDLE(open, (PLACEHOLDER_ARG uws_websocket_t * ws))                                                             \
+    HANDLE(drain, (PLACEHOLDER_ARG uws_websocket_t * ws))                                                            \
+    HANDLE(message, (PLACEHOLDER_ARG uws_websocket_t * ws, const char *message, size_t length, uws_opcode_t opcode)) \
+    HANDLE(ping, (PLACEHOLDER_ARG uws_websocket_t * ws, const char *message, size_t length))                         \
+    HANDLE(pong, (PLACEHOLDER_ARG uws_websocket_t * ws, const char *message, size_t length))                         \
+    HANDLE(close, (PLACEHOLDER_ARG uws_websocket_t * ws, int code, const char *message, size_t length))              \
+    HANDLE(upgrade, (PLACEHOLDER_ARG uws_res_t * response, uws_req_t * request, uws_socket_context_t * context))     \
+    HANDLE(subscription, (PLACEHOLDER_ARG uws_websocket_t * ws, const char *topic_name, size_t topic_name_length, int new_number_of_subscriber, int old_number_of_subscriber))
+
+#define HANDLE(name, args) \
+    typedef void(*uws_websocket_##name) args;
+    WEBSOCKET_HANDLERS(void *ptr COMMA)
+#undef HANDLE
+
+#define HANDLE(name, args)            \
     struct                            \
     {                                 \
         uws_websocket_##name handler; \
         void *ptr;                    \
-    } name
+    } name;
 
     typedef struct
     {
         uws_compress_options_t compression;
-        /* Maximum message size we can receive */
         unsigned int maxPayloadLength;
-        /* 2 minutes timeout is good */
         unsigned short idleTimeout;
-        /* 64kb backpressure is probably good */
         unsigned int maxBackpressure;
         bool closeOnBackpressureLimit;
-        /* This one depends on kernel timeouts and is a bad default */
         bool resetIdleTimeoutOnSend;
-        /* A good default, esp. for newcomers */
         bool sendPingsAutomatically;
-        /* Maximum socket lifetime in seconds before forced closure (defaults to disabled) */
         unsigned short maxLifetime;
-        SOCKET_HANDLER(upgrade);
-        SOCKET_HANDLER(open);
-        SOCKET_HANDLER(message);
-        SOCKET_HANDLER(drain);
-        SOCKET_HANDLER(ping);
-        SOCKET_HANDLER(pong);
-        SOCKET_HANDLER(close);
-        SOCKET_HANDLER(subscription);
+        WEBSOCKET_HANDLERS()
     } uws_socket_behavior_t;
+#undef HANDLE
 
     void uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior);
     void uws_ws_close(uws_websocket_t *ws);

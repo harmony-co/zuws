@@ -10,6 +10,17 @@ pub fn main() !void {
     const app = try App.init();
     defer app.deinit();
 
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+
+    var v1 = App.Group.init("/v1", gpa.allocator());
+    try v1.get("/user", hello);
+    try v1.get("/member", hello);
+
+    app.group(v1);
+
+    // We want to de init after using the group
+    v1.deinit();
+
     try app.get("/get", hello)
         .ws("/ws", .{
         .maxPayloadLength = 1024,

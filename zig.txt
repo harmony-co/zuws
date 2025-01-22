@@ -9,5 +9,6 @@ usize
 isize
 anytype
 anyopaque
+anyerror
 
 deinit

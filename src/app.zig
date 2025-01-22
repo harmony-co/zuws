@@ -174,6 +174,31 @@ pub const Request = struct {
 pub const App = struct {
     ptr: *c.uws_app_s,
 
+    const Method = enum { Get, Put };
+    const ListType = std.ArrayList(struct { Method, [:0]const u8, MethodHandler });
+    pub const Group = struct {
+        alloc: std.mem.Allocator,
+        list: ListType,
+        base_path: []const u8,
+
+        pub fn init(path: []const u8, allocator: std.mem.Allocator) Group {
+            return .{
+                .alloc = allocator,
+                .base_path = path,
+                .list = ListType.init(allocator),
+            };
+        }
+
+        pub fn deinit(self: Group) void {
+            self.list.deinit();
+        }
+
+        pub fn get(self: *Group, pattern: []const u8, handler: *const fn (*Response, *Request) void) !void {
+            const path = try std.mem.concatWithSentinel(self.alloc, u8, &.{ self.base_path, pattern }, 0);
+            try self.list.append(.{ .Get, path, handler });
+        }
+    };
+
     pub fn init() uWSError!App {
         const app = c.uws_create_app();
 
@@ -247,6 +272,18 @@ pub const App = struct {
     pub fn any(app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
         c.uws_app_any(app.ptr, pattern, handlerWrapper, @constCast(handler));
         return app;
+    }
+
+    pub fn group(app: *const App, g: Group) void {
+        for (g.list.items) |item| {
+            switch (item[0]) {
+                .Get => {
+                    std.debug.print("Adding GET method on path: {s}\n", .{item[1]});
+                    _ = app.get(item[1], item[2]);
+                },
+                else => unreachable,
+            }
+        }
     }
 
     pub fn ws(app: *const App, pattern: [:0]const u8, behavior: c.uws_socket_behavior_t) *const App {

@@ -5,7 +5,7 @@ pub const uWSError = error{
     CouldNotCreateApp,
 };
 
-const MethodHandler = *const fn (*Response, *Request) void;
+pub const MethodHandler = *const fn (*Response, *Request) void;
 
 fn handlerWrapper(ptr: ?*anyopaque, rawRes: ?*c.uws_res_s, rawReq: ?*c.uws_req_s) callconv(.C) void {
     const handler_ptr: MethodHandler = @ptrCast(@alignCast(ptr));
@@ -175,27 +175,16 @@ pub const App = struct {
     ptr: *c.uws_app_s,
 
     const Method = enum { Get, Put };
-    const ListType = std.ArrayList(struct { Method, [:0]const u8, MethodHandler });
+    const ListType = struct { Method, []const u8, MethodHandler };
     pub const Group = struct {
-        alloc: std.mem.Allocator,
-        list: ListType,
+        comptime list: []*ListType = &.{},
         base_path: []const u8,
 
-        pub fn init(path: []const u8, allocator: std.mem.Allocator) Group {
-            return .{
-                .alloc = allocator,
-                .base_path = path,
-                .list = ListType.init(allocator),
-            };
-        }
-
-        pub fn deinit(self: Group) void {
-            self.list.deinit();
-        }
-
-        pub fn get(self: *Group, pattern: []const u8, handler: *const fn (*Response, *Request) void) !void {
-            const path = try std.mem.concatWithSentinel(self.alloc, u8, &.{ self.base_path, pattern }, 0);
-            try self.list.append(.{ .Get, path, handler });
+        pub fn get(comptime self: *Group, pattern: []const u8, handler: MethodHandler) *Group {
+            const path = self.base_path ++ pattern;
+            const temp: ListType = .{ .Get, path, handler };
+            self.list = self.list ++ @constCast(.{&temp});
+            return self;
         }
     };
 
@@ -275,7 +264,7 @@ pub const App = struct {
     }
 
     pub fn group(app: *const App, g: Group) void {
-        for (g.list.items) |item| {
+        inline for (g.list) |item| {
             switch (item[0]) {
                 .Get => {
                     std.debug.print("Adding GET method on path: {s}\n", .{item[1]});

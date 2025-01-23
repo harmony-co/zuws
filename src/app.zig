@@ -175,15 +175,21 @@ pub const App = struct {
     ptr: *c.uws_app_s,
 
     const Method = enum { Get, Put };
-    const ListType = struct { Method, []const u8, MethodHandler };
+    const ListType = struct {
+        method: Method,
+        base: []const u8,
+        handler: MethodHandler,
+    };
     pub const Group = struct {
-        comptime list: []*ListType = &.{},
+        list: []const ListType = &.{},
         base_path: []const u8,
 
-        pub fn get(comptime self: *Group, pattern: []const u8, handler: MethodHandler) *Group {
-            const path = self.base_path ++ pattern;
-            const temp: ListType = .{ .Get, path, handler };
-            self.list = self.list ++ @constCast(.{&temp});
+        pub fn get(comptime self: *Group, comptime pattern: []const u8, handler: MethodHandler) *const Group {
+            self.list = self.list ++ .{.{
+                .method = .Get,
+                .base = self.base_path ++ pattern,
+                .handler = handler,
+            }};
             return self;
         }
     };
@@ -263,12 +269,12 @@ pub const App = struct {
         return app;
     }
 
-    pub fn group(app: *const App, g: Group) void {
+    pub fn group(app: *const App, comptime g: *const Group) void {
         inline for (g.list) |item| {
-            switch (item[0]) {
+            switch (item.method) {
                 .Get => {
                     std.debug.print("Adding GET method on path: {s}\n", .{item[1]});
-                    _ = app.get(item[1], item[2]);
+                    _ = app.get(item.base, item.handler);
                 },
                 else => unreachable,
             }

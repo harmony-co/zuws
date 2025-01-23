@@ -4,12 +4,14 @@ pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const exe = b.addExecutable(.{
+    const exe_options = std.Build.ExecutableOptions{
         .name = "zuws",
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
-    });
+    };
+
+    const exe = b.addExecutable(exe_options);
 
     var flags = std.ArrayList([]const u8).init(b.allocator);
     defer flags.deinit();
@@ -75,4 +77,11 @@ pub fn build(b: *std.Build) !void {
 
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_exe.step);
+
+    // ZLS Checking
+    const exe_check = b.addExecutable(exe_options);
+    exe_check.root_module.addImport("uws", translate_c.createModule());
+    exe_check.linkLibrary(uWebSockets);
+    const check = b.step("check", "Check if zuws compiles");
+    check.dependOn(&exe_check.step);
 }

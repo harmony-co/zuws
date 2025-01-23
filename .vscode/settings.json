@@ -83,4 +83,8 @@
   "lldb.consoleMode": "commands",
   "cmake.ignoreCMakeListsMissing": true,
   "zig.zls.enabled": "on",
+  "zig.zls.enableBuildOnSave": true,
+  "zig.zls.additionalOptions": {
+    "zig.zls.buildOnSaveStep": "check",
+  }
 }

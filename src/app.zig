@@ -5,7 +5,7 @@ pub const uWSError = error{
     CouldNotCreateApp,
 };
 
-const MethodHandler = *const fn (*Response, *Request) void;
+pub const MethodHandler = *const fn (*Response, *Request) void;
 
 fn handlerWrapper(ptr: ?*anyopaque, rawRes: ?*c.uws_res_s, rawReq: ?*c.uws_req_s) callconv(.C) void {
     const handler_ptr: MethodHandler = @ptrCast(@alignCast(ptr));
@@ -171,41 +171,87 @@ pub const Request = struct {
     }
 };
 
+fn CreateGroupFn(comptime method: App.Group.Method) fn (comptime self: *App.Group, comptime pattern: [:0]const u8, handler: MethodHandler) *App.Group {
+    return struct {
+        fn temp(comptime self: *App.Group, comptime pattern: [:0]const u8, handler: MethodHandler) *App.Group {
+            self.list = self.list ++ .{App.Group.ListType{ .method = method, .pattern = self.base_path ++ pattern, .handler = handler }};
+            return self;
+        }
+    }.temp;
+}
+
+/// Method should **ALWAYS** be lower case
+fn CreateMethodFn(comptime method: []const u8) fn (app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
+    var temp_up: [10]u8 = undefined;
+    const upper_method = std.ascii.upperString(&temp_up, method);
+    const log_str = std.fmt.comptimePrint("Registering {s} route: ", .{upper_method}) ++ "{s}";
+
+    return struct {
+        fn temp(app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
+            if (app.logs_enabled) {
+                std.log.info(log_str, .{pattern});
+            }
+            @field(c, std.fmt.comptimePrint("uws_app_{s}", .{method}))(app.ptr, pattern, handlerWrapper, @constCast(handler));
+            return app;
+        }
+    }.temp;
+}
+
 pub const App = struct {
     ptr: *c.uws_app_s,
+    logs_enabled: bool,
 
-    const Method = enum { Get, Put };
-    const ListType = std.ArrayList(struct { Method, [:0]const u8, MethodHandler });
     pub const Group = struct {
-        alloc: std.mem.Allocator,
-        list: ListType,
-        base_path: []const u8,
+        list: []const ListType = &.{},
+        base_path: [:0]const u8,
 
-        pub fn init(path: []const u8, allocator: std.mem.Allocator) Group {
-            return .{
-                .alloc = allocator,
-                .base_path = path,
-                .list = ListType.init(allocator),
-            };
-        }
+        const ListType = struct {
+            method: Method,
+            pattern: [:0]const u8,
+            handler: MethodHandler,
+        };
 
-        pub fn deinit(self: Group) void {
-            self.list.deinit();
-        }
+        const Method = enum {
+            Get,
+            Post,
+            Put,
+            Options,
+            Del,
+            Patch,
+            Head,
+            Connect,
+            Trace,
+            Any,
+        };
 
-        pub fn get(self: *Group, pattern: []const u8, handler: *const fn (*Response, *Request) void) !void {
-            const path = try std.mem.concatWithSentinel(self.alloc, u8, &.{ self.base_path, pattern }, 0);
-            try self.list.append(.{ .Get, path, handler });
+        pub const get = CreateGroupFn(.Get);
+        pub const post = CreateGroupFn(.Post);
+        pub const put = CreateGroupFn(.Put);
+        pub const options = CreateGroupFn(.Options);
+        pub const del = CreateGroupFn(.Del);
+        pub const patch = CreateGroupFn(.Patch);
+        pub const head = CreateGroupFn(.Head);
+        pub const connect = CreateGroupFn(.Connect);
+        pub const trace = CreateGroupFn(.Trace);
+        pub const any = CreateGroupFn(.Any);
+
+        pub fn group(comptime self: *Group, grp: Group) *Group {
+            comptime {
+                for (grp.list) |item| {
+                    self.list = self.list ++ .{ListType{
+                        .method = item.method,
+                        .pattern = self.base_path ++ item.pattern,
+                        .handler = item.handler,
+                    }};
+                }
+                return self;
+            }
         }
     };
 
-    pub fn init() uWSError!App {
+    pub fn init(enable_logs: bool) uWSError!App {
         const app = c.uws_create_app();
-
-        if (app) |ptr| {
-            return .{ .ptr = ptr };
-        }
-
+        if (app) |ptr| return .{ .ptr = ptr, .logs_enabled = enable_logs };
         return uWSError.CouldNotCreateApp;
     }
 
@@ -224,69 +270,39 @@ pub const App = struct {
         c.uws_app_run(app.ptr);
     }
 
-    pub fn get(app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
-        c.uws_app_get(app.ptr, pattern, handlerWrapper, @constCast(handler));
-        return app;
-    }
+    pub const get = CreateMethodFn("get");
+    pub const post = CreateMethodFn("post");
+    pub const put = CreateMethodFn("put");
+    pub const options = CreateMethodFn("options");
+    pub const del = CreateMethodFn("del");
+    pub const patch = CreateMethodFn("patch");
+    pub const head = CreateMethodFn("head");
+    pub const connect = CreateMethodFn("connect");
+    pub const trace = CreateMethodFn("trace");
+    pub const any = CreateMethodFn("any");
 
-    pub fn post(app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
-        c.uws_app_post(app.ptr, pattern, handlerWrapper, @constCast(handler));
-        return app;
-    }
-
-    pub fn put(app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
-        c.uws_app_put(app.ptr, pattern, handlerWrapper, @constCast(handler));
-        return app;
-    }
-
-    pub fn options(app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
-        c.uws_app_options(app.ptr, pattern, handlerWrapper, @constCast(handler));
-        return app;
-    }
-
-    pub fn del(app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
-        c.uws_app_del(app.ptr, pattern, handlerWrapper, @constCast(handler));
-        return app;
-    }
-
-    pub fn patch(app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
-        c.uws_app_patch(app.ptr, pattern, handlerWrapper, @constCast(handler));
-        return app;
-    }
-
-    pub fn head(app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
-        c.uws_app_head(app.ptr, pattern, handlerWrapper, @constCast(handler));
-        return app;
-    }
-
-    pub fn connect(app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
-        c.uws_app_connect(app.ptr, pattern, handlerWrapper, @constCast(handler));
-        return app;
-    }
-
-    pub fn trace(app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
-        c.uws_app_trace(app.ptr, pattern, handlerWrapper, @constCast(handler));
-        return app;
-    }
-
-    pub fn any(app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
-        c.uws_app_any(app.ptr, pattern, handlerWrapper, @constCast(handler));
-        return app;
-    }
-
-    pub fn group(app: *const App, g: Group) void {
-        for (g.list.items) |item| {
-            switch (item[0]) {
-                .Get => {
-                    std.debug.print("Adding GET method on path: {s}\n", .{item[1]});
-                    _ = app.get(item[1], item[2]);
-                },
-                else => unreachable,
+    pub fn group(app: *const App, comptime g: Group) *const App {
+        inline for (g.list) |item| {
+            switch (item.method) {
+                .Get => _ = app.get(item.pattern, item.handler),
+                .Post => _ = app.post(item.pattern, item.handler),
+                .Put => _ = app.put(item.pattern, item.handler),
+                .Options => _ = app.options(item.pattern, item.handler),
+                .Del => _ = app.del(item.pattern, item.handler),
+                .Patch => _ = app.patch(item.pattern, item.handler),
+                .Head => _ = app.head(item.pattern, item.handler),
+                .Connect => _ = app.connect(item.pattern, item.handler),
+                .Trace => _ = app.trace(item.pattern, item.handler),
+                .Any => _ = app.any(item.pattern, item.handler),
             }
         }
+        return app;
     }
 
     pub fn ws(app: *const App, pattern: [:0]const u8, behavior: c.uws_socket_behavior_t) *const App {
+        if (app.logs_enabled) {
+            std.log.info("Registering WebSocket route: {s}", .{pattern});
+        }
         c.uws_ws(app.ptr, pattern, behavior);
         return app;
     }

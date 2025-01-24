@@ -7,28 +7,33 @@ const MethodHandler = @import("./app.zig").MethodHandler;
 const c = @import("uws");
 
 pub fn main() !void {
-    const app = try App.init();
+    const app = try App.init(true);
     defer app.deinit();
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const api: App.Group = comptime blk: {
+        var g = App.Group{ .base_path = "/api" };
+        var v1 = App.Group{ .base_path = "/v1" };
 
-    var v1 = App.Group.init("/v1", gpa.allocator());
-    try v1.get("/user", hello);
-    try v1.get("/member", hello);
+        // Maybe methods should not return self...
+        _ = v1.get("/me", hello);
+        _ = g.get("/user", hello)
+            .group(v1);
 
-    app.group(v1);
+        break :blk g;
+    };
 
-    // We want to de init after using the group
-    v1.deinit();
-
-    try app.get("/get", hello)
+    try app.group(api)
         .ws("/ws", .{
-        .maxPayloadLength = 1024,
-        .upgrade = .{ .handler = upgradeWrapper, .ptr = @constCast(&on_upgrade) },
-        .open = .{ .handler = &on_open, .ptr = null },
-        .close = .{ .handler = &on_close, .ptr = null },
-        .message = .{ .handler = &on_message, .ptr = null },
-    }).listen(3000, null);
+        // zig fmt: off
+            .maxPayloadLength = 1024,
+            .upgrade = .{ .handler = upgradeWrapper, .ptr = @constCast(&on_upgrade) },
+            .open = .{ .handler = &on_open, .ptr = null },
+            .close = .{ .handler = &on_close, .ptr = null },
+            .message = .{ .handler = &on_message, .ptr = null },
+        })
+        // zig fmt: on
+        .get("/get", hello)
+        .listen(3001, null);
 }
 
 fn upgradeWrapper(ptr: ?*anyopaque, rawRes: ?*c.uws_res_s, rawReq: ?*c.uws_req_t, context: ?*c.uws_socket_context_t) callconv(.C) void {

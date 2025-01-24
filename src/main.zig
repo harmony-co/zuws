@@ -10,15 +10,13 @@ pub fn main() !void {
     const app = try App.init();
     defer app.deinit();
 
-    app.group(comptime blk: {
+    try app.group(comptime blk: {
         var g = App.Group{ .base_path = "/v1" };
         break :blk g
             .get("/user", hello)
             .post("/asdfasdf", hello)
             .get("/member", hello).*;
-    });
-
-    try app.get("/get", hello)
+    }).get("/get", hello)
         .ws("/ws", .{
         .maxPayloadLength = 1024,
         .upgrade = .{ .handler = upgradeWrapper, .ptr = @constCast(&on_upgrade) },

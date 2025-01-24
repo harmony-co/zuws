@@ -306,7 +306,7 @@ pub const App = struct {
         return app;
     }
 
-    pub fn group(app: *const App, comptime g: Group) void {
+    pub fn group(app: *const App, comptime g: Group) *const App {
         inline for (g.list) |item| {
             switch (item.method) {
                 .Get => _ = app.get(item.base, item.handler),
@@ -321,6 +321,7 @@ pub const App = struct {
                 .Any => _ = app.any(item.base, item.handler),
             }
         }
+        return app;
     }
 
     pub fn ws(app: *const App, pattern: [:0]const u8, behavior: c.uws_socket_behavior_t) *const App {

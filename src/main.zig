@@ -16,14 +16,14 @@ pub fn main() !void {
             .get("/user", hello)
             .post("/asdfasdf", hello)
             .get("/member", hello).*;
-    }).get("/get", hello)
-        .ws("/ws", .{
+    }).ws("/ws", .{
         .maxPayloadLength = 1024,
         .upgrade = .{ .handler = upgradeWrapper, .ptr = @constCast(&on_upgrade) },
         .open = .{ .handler = &on_open, .ptr = null },
         .close = .{ .handler = &on_close, .ptr = null },
         .message = .{ .handler = &on_message, .ptr = null },
-    }).listen(3000, null);
+    }).get("/get", hello)
+        .listen(3000, null);
 }
 
 fn upgradeWrapper(ptr: ?*anyopaque, rawRes: ?*c.uws_res_s, rawReq: ?*c.uws_req_t, context: ?*c.uws_socket_context_t) callconv(.C) void {

@@ -174,7 +174,7 @@ pub const Request = struct {
 pub const App = struct {
     ptr: *c.uws_app_s,
 
-    const Method = enum { Get, Put };
+    const Method = enum { Get, Post, Put, Options, Del, Patch, Head, Connect, Trace, Any };
     const ListType = struct {
         method: Method,
         base: [:0]const u8,
@@ -185,11 +185,52 @@ pub const App = struct {
         base_path: [:0]const u8,
 
         pub fn get(comptime self: *Group, comptime pattern: [:0]const u8, comptime handler: MethodHandler) *Group {
-            self.list = self.list ++ .{.{
-                .method = .Get,
-                .base = self.base_path ++ pattern,
-                .handler = handler,
-            }};
+            self.list = self.list ++ .{.{ .method = .Get, .base = self.base_path ++ pattern, .handler = handler }};
+            return self;
+        }
+
+        pub fn post(comptime self: *Group, comptime pattern: [:0]const u8, comptime handler: MethodHandler) *Group {
+            self.list = self.list ++ .{.{ .method = .Post, .base = self.base_path ++ pattern, .handler = handler }};
+            return self;
+        }
+
+        pub fn put(comptime self: *Group, comptime pattern: [:0]const u8, comptime handler: MethodHandler) *Group {
+            self.list = self.list ++ .{.{ .method = .Put, .base = self.base_path ++ pattern, .handler = handler }};
+            return self;
+        }
+
+        pub fn options(comptime self: *Group, comptime pattern: [:0]const u8, comptime handler: MethodHandler) *Group {
+            self.list = self.list ++ .{.{ .method = .Options, .base = self.base_path ++ pattern, .handler = handler }};
+            return self;
+        }
+
+        pub fn del(comptime self: *Group, comptime pattern: [:0]const u8, comptime handler: MethodHandler) *Group {
+            self.list = self.list ++ .{.{ .method = .Del, .base = self.base_path ++ pattern, .handler = handler }};
+            return self;
+        }
+
+        pub fn patch(comptime self: *Group, comptime pattern: [:0]const u8, comptime handler: MethodHandler) *Group {
+            self.list = self.list ++ .{.{ .method = .Patch, .base = self.base_path ++ pattern, .handler = handler }};
+            return self;
+        }
+
+        pub fn head(comptime self: *Group, comptime pattern: [:0]const u8, comptime handler: MethodHandler) *Group {
+            self.list = self.list ++ .{.{ .method = .Head, .base = self.base_path ++ pattern, .handler = handler }};
+            return self;
+        }
+
+        pub fn connect(comptime self: *Group, comptime pattern: [:0]const u8, comptime handler: MethodHandler) *Group {
+            self.list = self.list ++ .{.{ .method = .Connect, .base = self.base_path ++ pattern, .handler = handler }};
+            return self;
+        }
+
+        pub fn trace(comptime self: *Group, comptime pattern: [:0]const u8, comptime handler: MethodHandler) *Group {
+            self.list = self.list ++ .{.{ .method = .Trace, .base = self.base_path ++ pattern, .handler = handler }};
+            return self;
+        }
+
+        pub fn any(comptime self: *Group, comptime pattern: [:0]const u8, comptime handler: MethodHandler) *Group {
+            self.list = self.list ++ .{.{ .method = .Any, .base = self.base_path ++ pattern, .handler = handler }};
             return self;
         }
     };
@@ -268,11 +309,16 @@ pub const App = struct {
     pub fn group(app: *const App, comptime g: Group) void {
         inline for (g.list) |item| {
             switch (item.method) {
-                .Get => {
-                    std.debug.print("Adding GET method on path: {s}\n", .{item.base});
-                    _ = app.get(item.base, item.handler);
-                },
-                else => unreachable,
+                .Get => _ = app.get(item.base, item.handler),
+                .Post => _ = app.post(item.base, item.handler),
+                .Put => _ = app.put(item.base, item.handler),
+                .Options => _ = app.options(item.base, item.handler),
+                .Del => _ = app.del(item.base, item.handler),
+                .Patch => _ = app.patch(item.base, item.handler),
+                .Head => _ = app.head(item.base, item.handler),
+                .Connect => _ = app.connect(item.base, item.handler),
+                .Trace => _ = app.trace(item.base, item.handler),
+                .Any => _ = app.any(item.base, item.handler),
             }
         }
     }

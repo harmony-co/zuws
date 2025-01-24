@@ -14,6 +14,7 @@ pub fn main() !void {
         var g = App.Group{ .base_path = "/v1" };
         break :blk g
             .get("/user", hello)
+            .post("/asdfasdf", hello)
             .get("/member", hello).*;
     };
     app.group(v1);

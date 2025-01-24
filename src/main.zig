@@ -11,10 +11,10 @@ pub fn main() !void {
     defer app.deinit();
 
     const v1 = comptime blk: {
-        var g = App.Group.init("/v1");
-        g.get("/user", hello);
-        g.get("/member", hello);
-        break :blk g;
+        var g = App.Group{ .base_path = "/v1" };
+        break :blk g
+            .get("/user", hello)
+            .get("/member", hello).*;
     };
     app.group(v1);
 

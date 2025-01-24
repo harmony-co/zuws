@@ -184,16 +184,13 @@ pub const App = struct {
         list: []const ListType = &.{},
         base_path: [:0]const u8,
 
-        pub fn init(comptime base_path: [:0]const u8) Group {
-            return .{ .base_path = base_path };
-        }
-
-        pub fn get(comptime self: *Group, comptime pattern: [:0]const u8, comptime handler: MethodHandler) void {
+        pub fn get(comptime self: *Group, comptime pattern: [:0]const u8, comptime handler: MethodHandler) *Group {
             self.list = self.list ++ .{.{
                 .method = .Get,
                 .base = self.base_path ++ pattern,
                 .handler = handler,
             }};
+            return self;
         }
     };
 

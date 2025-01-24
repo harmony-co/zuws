@@ -177,30 +177,29 @@ pub const App = struct {
     const Method = enum { Get, Put };
     const ListType = struct {
         method: Method,
-        base: []const u8,
+        base: [:0]const u8,
         handler: MethodHandler,
     };
     pub const Group = struct {
         list: []const ListType = &.{},
-        base_path: []const u8,
+        base_path: [:0]const u8,
 
-        pub fn get(comptime self: *Group, comptime pattern: []const u8, handler: MethodHandler) *const Group {
+        pub fn init(comptime base_path: [:0]const u8) Group {
+            return comptime .{ .base_path = base_path };
+        }
+
+        pub fn get(comptime self: *Group, comptime pattern: [:0]const u8, comptime handler: MethodHandler) void {
             self.list = self.list ++ .{.{
                 .method = .Get,
                 .base = self.base_path ++ pattern,
                 .handler = handler,
             }};
-            return self;
         }
     };
 
     pub fn init() uWSError!App {
         const app = c.uws_create_app();
-
-        if (app) |ptr| {
-            return .{ .ptr = ptr };
-        }
-
+        if (app) |ptr| return .{ .ptr = ptr };
         return uWSError.CouldNotCreateApp;
     }
 
@@ -269,11 +268,11 @@ pub const App = struct {
         return app;
     }
 
-    pub fn group(app: *const App, comptime g: *const Group) void {
+    pub fn group(app: *const App, comptime g: Group) void {
         inline for (g.list) |item| {
             switch (item.method) {
                 .Get => {
-                    std.debug.print("Adding GET method on path: {s}\n", .{item[1]});
+                    std.debug.print("Adding GET method on path: {s}\n", .{item.base});
                     _ = app.get(item.base, item.handler);
                 },
                 else => unreachable,

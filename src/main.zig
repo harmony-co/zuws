@@ -6,16 +6,17 @@ const MethodHandler = @import("./app.zig").MethodHandler;
 
 const c = @import("uws");
 
-const v1 = App.Group{ .base_path = "/v1" };
-const _ = v1
-    .get("/user", hello)
-    .get("/member", hello);
-
 pub fn main() !void {
     const app = try App.init();
     defer app.deinit();
 
-    app.group(&v1);
+    const v1 = comptime blk: {
+        var g = App.Group.init("/v1");
+        g.get("/user", hello);
+        g.get("/member", hello);
+        break :blk g;
+    };
+    app.group(v1);
 
     try app.get("/get", hello)
         .ws("/ws", .{

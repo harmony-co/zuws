@@ -7,27 +7,32 @@ const MethodHandler = @import("./app.zig").MethodHandler;
 const c = @import("uws");
 
 pub fn main() !void {
-    const app = try App.init();
+    const app = try App.init(true);
     defer app.deinit();
 
-    try app.group(blk: {
-        var g = App.Group{ .base_path = "/v1" };
-        break :blk g
-            .group(blk2: {
-            var g2 = App.Group{ .base_path = "/api" };
-            break :blk2 g2
-                .get("/me", hello).*;
+    const api: App.Group = comptime blk: {
+        var g = App.Group{ .base_path = "/api" };
+        var v1 = App.Group{ .base_path = "/v1" };
+
+        // Maybe methods should not return self...
+        _ = v1.get("/me", hello);
+        _ = g.get("/user", hello)
+            .group(v1);
+
+        break :blk g;
+    };
+
+    try app.group(api)
+        .ws("/ws", .{
+        // zig fmt: off
+            .maxPayloadLength = 1024,
+            .upgrade = .{ .handler = upgradeWrapper, .ptr = @constCast(&on_upgrade) },
+            .open = .{ .handler = &on_open, .ptr = null },
+            .close = .{ .handler = &on_close, .ptr = null },
+            .message = .{ .handler = &on_message, .ptr = null },
         })
-            .get("/user", hello)
-            .post("/asdfasdf", hello)
-            .get("/member", hello).*;
-    }).ws("/ws", .{
-        .maxPayloadLength = 1024,
-        .upgrade = .{ .handler = upgradeWrapper, .ptr = @constCast(&on_upgrade) },
-        .open = .{ .handler = &on_open, .ptr = null },
-        .close = .{ .handler = &on_close, .ptr = null },
-        .message = .{ .handler = &on_message, .ptr = null },
-    }).get("/get", hello)
+        // zig fmt: on
+        .get("/get", hello)
         .listen(3001, null);
 }
 

@@ -235,7 +235,14 @@ size_t uws_req_get_query(uws_req_t *res, const char *key, size_t key_length, con
     return value.length();
 }
 
-size_t uws_req_get_parameter(uws_req_t *res, unsigned short index, const char **dest)
+size_t uws_req_get_parameter_name(uws_req_t *res, const char *key, size_t key_length, const char **dest)
+{
+    std::string_view value = ((uWS::HttpRequest *)res)->getParameter(std::string_view(key, key_length));
+    *dest = value.data();
+    return value.length();
+}
+
+size_t uws_req_get_parameter_index(uws_req_t *res, unsigned short index, const char **dest)
 {
     std::string_view value = ((uWS::HttpRequest *)res)->getParameter(index);
     *dest = value.data();

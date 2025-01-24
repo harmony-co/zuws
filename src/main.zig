@@ -33,6 +33,7 @@ pub fn main() !void {
         })
         // zig fmt: on
         .get("/get", hello)
+        .get("/get/:id", hello2)
         .listen(3001, null);
 }
 
@@ -45,6 +46,13 @@ fn upgradeWrapper(ptr: ?*anyopaque, rawRes: ?*c.uws_res_s, rawReq: ?*c.uws_req_t
 
 fn hello(res: *Response, req: *Request) void {
     _ = req;
+    const str = "Hello World!\n";
+    res.end(str, str.len, false);
+}
+
+fn hello2(res: *Response, req: *Request) void {
+    std.debug.print("{s}\n", .{req.getParameterByName("id")});
+    std.debug.print("{s}\n", .{req.getParameterByIndex(0)});
     const str = "Hello World!\n";
     res.end(str, str.len, false);
 }

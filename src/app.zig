@@ -166,8 +166,16 @@ pub const Request = struct {
         return c.uws_req_get_query(res.ptr, key, key_length, dest);
     }
 
-    pub fn getParameter(res: *const Request, index: c_ushort, dest: *[:0]const u8) usize {
-        return c.uws_req_get_parameter(res.ptr, index, dest);
+    pub fn getParameterByIndex(res: *const Request, index: u16) []const u8 {
+        var temp: [*c]const u8 = undefined;
+        const len = c.uws_req_get_parameter_index(res.ptr, @as(c_ushort, index), &temp);
+        return temp[0..len];
+    }
+
+    pub fn getParameterByName(res: *const Request, name: [:0]const u8) []const u8 {
+        var temp: [*c]const u8 = undefined;
+        const len = c.uws_req_get_parameter_name(res.ptr, name, name.len, &temp);
+        return temp[0..len];
     }
 };
 

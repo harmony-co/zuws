@@ -140,7 +140,8 @@ extern "C"
     size_t uws_req_get_case_sensitive_method(uws_req_t *res, const char **dest);
     size_t uws_req_get_header(uws_req_t *res, const char *lower_case_header, size_t lower_case_header_length, const char **dest);
     size_t uws_req_get_query(uws_req_t *res, const char *key, size_t key_length, const char **dest);
-    size_t uws_req_get_parameter(uws_req_t *res, unsigned short index, const char **dest);
+    size_t uws_req_get_parameter_name(uws_req_t *res, const char *key, size_t key_length, const char **dest);
+    size_t uws_req_get_parameter_index(uws_req_t *res, unsigned short index, const char **dest);
 
 #pragma endregion
 #pragma region uWS-Websockets

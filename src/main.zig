@@ -1,8 +1,8 @@
 const std = @import("std");
-const App = @import("./app.zig").App;
-const Response = @import("./app.zig").Response;
-const Request = @import("./app.zig").Request;
-const MethodHandler = @import("./app.zig").MethodHandler;
+const App = @import("./App.zig");
+const Request = @import("./Request.zig");
+const Response = @import("./Response.zig");
+const MethodHandler = App.MethodHandler;
 
 const c = @import("uws");
 

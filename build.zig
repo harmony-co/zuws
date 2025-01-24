@@ -78,6 +78,13 @@ pub fn build(b: *std.Build) !void {
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_exe.step);
 
+    // Emit ASM
+    const emit_asm = b.step("asm", "Emit assembly file");
+    const waf = b.addWriteFiles();
+    waf.step.dependOn(b.getInstallStep());
+    waf.addCopyFileToSource(exe.getEmittedAsm(), "main.asm");
+    emit_asm.dependOn(&waf.step);
+
     // ZLS Checking
     const exe_check = b.addExecutable(exe_options);
     exe_check.root_module.addImport("uws", translate_c.createModule());

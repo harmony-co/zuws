@@ -181,56 +181,62 @@ pub const App = struct {
         handler: MethodHandler,
     };
     pub const Group = struct {
+        groups: []const Group = &.{},
         list: []const ListType = &.{},
         base_path: [:0]const u8,
 
-        pub fn get(comptime self: *Group, comptime pattern: [:0]const u8, comptime handler: MethodHandler) *Group {
-            self.list = self.list ++ .{.{ .method = .Get, .base = self.base_path ++ pattern, .handler = handler }};
+        pub fn get(comptime self: *Group, comptime pattern: [:0]const u8, handler: MethodHandler) *Group {
+            self.list = self.list ++ .{ListType{ .method = .Get, .base = self.base_path ++ pattern, .handler = handler }};
             return self;
         }
 
-        pub fn post(comptime self: *Group, comptime pattern: [:0]const u8, comptime handler: MethodHandler) *Group {
-            self.list = self.list ++ .{.{ .method = .Post, .base = self.base_path ++ pattern, .handler = handler }};
+        pub fn post(comptime self: *Group, comptime pattern: [:0]const u8, handler: MethodHandler) *Group {
+            self.list = self.list ++ .{ListType{ .method = .Post, .base = self.base_path ++ pattern, .handler = handler }};
             return self;
         }
 
-        pub fn put(comptime self: *Group, comptime pattern: [:0]const u8, comptime handler: MethodHandler) *Group {
-            self.list = self.list ++ .{.{ .method = .Put, .base = self.base_path ++ pattern, .handler = handler }};
+        pub fn put(comptime self: *Group, comptime pattern: [:0]const u8, handler: MethodHandler) *Group {
+            self.list = self.list ++ .{ListType{ .method = .Put, .base = self.base_path ++ pattern, .handler = handler }};
             return self;
         }
 
-        pub fn options(comptime self: *Group, comptime pattern: [:0]const u8, comptime handler: MethodHandler) *Group {
-            self.list = self.list ++ .{.{ .method = .Options, .base = self.base_path ++ pattern, .handler = handler }};
+        pub fn options(comptime self: *Group, comptime pattern: [:0]const u8, handler: MethodHandler) *Group {
+            self.list = self.list ++ .{ListType{ .method = .Options, .base = self.base_path ++ pattern, .handler = handler }};
             return self;
         }
 
-        pub fn del(comptime self: *Group, comptime pattern: [:0]const u8, comptime handler: MethodHandler) *Group {
-            self.list = self.list ++ .{.{ .method = .Del, .base = self.base_path ++ pattern, .handler = handler }};
+        pub fn del(comptime self: *Group, comptime pattern: [:0]const u8, handler: MethodHandler) *Group {
+            self.list = self.list ++ .{ListType{ .method = .Del, .base = self.base_path ++ pattern, .handler = handler }};
             return self;
         }
 
-        pub fn patch(comptime self: *Group, comptime pattern: [:0]const u8, comptime handler: MethodHandler) *Group {
-            self.list = self.list ++ .{.{ .method = .Patch, .base = self.base_path ++ pattern, .handler = handler }};
+        pub fn patch(comptime self: *Group, comptime pattern: [:0]const u8, handler: MethodHandler) *Group {
+            self.list = self.list ++ .{ListType{ .method = .Patch, .base = self.base_path ++ pattern, .handler = handler }};
             return self;
         }
 
-        pub fn head(comptime self: *Group, comptime pattern: [:0]const u8, comptime handler: MethodHandler) *Group {
-            self.list = self.list ++ .{.{ .method = .Head, .base = self.base_path ++ pattern, .handler = handler }};
+        pub fn head(comptime self: *Group, comptime pattern: [:0]const u8, handler: MethodHandler) *Group {
+            self.list = self.list ++ .{ListType{ .method = .Head, .base = self.base_path ++ pattern, .handler = handler }};
             return self;
         }
 
-        pub fn connect(comptime self: *Group, comptime pattern: [:0]const u8, comptime handler: MethodHandler) *Group {
-            self.list = self.list ++ .{.{ .method = .Connect, .base = self.base_path ++ pattern, .handler = handler }};
+        pub fn connect(comptime self: *Group, comptime pattern: [:0]const u8, handler: MethodHandler) *Group {
+            self.list = self.list ++ .{ListType{ .method = .Connect, .base = self.base_path ++ pattern, .handler = handler }};
             return self;
         }
 
-        pub fn trace(comptime self: *Group, comptime pattern: [:0]const u8, comptime handler: MethodHandler) *Group {
-            self.list = self.list ++ .{.{ .method = .Trace, .base = self.base_path ++ pattern, .handler = handler }};
+        pub fn trace(comptime self: *Group, comptime pattern: [:0]const u8, handler: MethodHandler) *Group {
+            self.list = self.list ++ .{ListType{ .method = .Trace, .base = self.base_path ++ pattern, .handler = handler }};
             return self;
         }
 
-        pub fn any(comptime self: *Group, comptime pattern: [:0]const u8, comptime handler: MethodHandler) *Group {
-            self.list = self.list ++ .{.{ .method = .Any, .base = self.base_path ++ pattern, .handler = handler }};
+        pub fn any(comptime self: *Group, comptime pattern: [:0]const u8, handler: MethodHandler) *Group {
+            self.list = self.list ++ .{ListType{ .method = .Any, .base = self.base_path ++ pattern, .handler = handler }};
+            return self;
+        }
+
+        pub fn group(comptime self: *Group, g: Group) *Group {
+            self.groups = self.groups ++ .{g};
             return self;
         }
     };
@@ -307,9 +313,16 @@ pub const App = struct {
     }
 
     pub fn group(app: *const App, comptime g: Group) *const App {
+        inline for (g.groups) |child| {
+            std.debug.print("Entering Group: {any}\n", .{child});
+            _ = app.group(child);
+        }
         inline for (g.list) |item| {
             switch (item.method) {
-                .Get => _ = app.get(item.base, item.handler),
+                .Get => {
+                    _ = app.get(item.base, item.handler);
+                    std.debug.print("Registering GET route: {s}\n", .{item.base});
+                },
                 .Post => _ = app.post(item.base, item.handler),
                 .Put => _ = app.put(item.base, item.handler),
                 .Options => _ = app.options(item.base, item.handler),

@@ -10,9 +10,14 @@ pub fn main() !void {
     const app = try App.init();
     defer app.deinit();
 
-    try app.group(comptime blk: {
+    try app.group(blk: {
         var g = App.Group{ .base_path = "/v1" };
         break :blk g
+            .group(blk2: {
+            var g2 = App.Group{ .base_path = "/api" };
+            break :blk2 g2
+                .get("/me", hello).*;
+        })
             .get("/user", hello)
             .post("/asdfasdf", hello)
             .get("/member", hello).*;
@@ -23,7 +28,7 @@ pub fn main() !void {
         .close = .{ .handler = &on_close, .ptr = null },
         .message = .{ .handler = &on_message, .ptr = null },
     }).get("/get", hello)
-        .listen(3000, null);
+        .listen(3001, null);
 }
 
 fn upgradeWrapper(ptr: ?*anyopaque, rawRes: ?*c.uws_res_s, rawReq: ?*c.uws_req_t, context: ?*c.uws_socket_context_t) callconv(.C) void {

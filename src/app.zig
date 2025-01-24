@@ -171,58 +171,58 @@ pub const Request = struct {
     }
 };
 
+fn CreateGroupFn(comptime method: App.Group.Method) fn (comptime self: *App.Group, comptime pattern: [:0]const u8, handler: MethodHandler) *App.Group {
+    return struct {
+        fn temp(comptime self: *App.Group, comptime pattern: [:0]const u8, handler: MethodHandler) *App.Group {
+            self.list = self.list ++ .{App.Group.ListType{ .method = method, .pattern = self.base_path ++ pattern, .handler = handler }};
+            return self;
+        }
+    }.temp;
+}
+
+/// Method should **ALWAYS** be lower case
+fn CreateMethodFn(comptime method: []const u8) fn (app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
+    var temp_up: [10]u8 = undefined;
+    const upper_method = std.ascii.upperString(&temp_up, method);
+    const log_str = std.fmt.comptimePrint("Registering {s} route: ", .{upper_method}) ++ "{s}";
+
+    return struct {
+        fn temp(app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
+            if (app.logs_enabled) {
+                std.log.info(log_str, .{pattern});
+            }
+            @field(c, std.fmt.comptimePrint("uws_app_{s}", .{method}))(app.ptr, pattern, handlerWrapper, @constCast(handler));
+            return app;
+        }
+    }.temp;
+}
+
 pub const App = struct {
     ptr: *c.uws_app_s,
     logs_enabled: bool,
 
-    const Method = enum {
-        Get,
-        Post,
-        Put,
-        Options,
-        Del,
-        Patch,
-        Head,
-        Connect,
-        Trace,
-        Any,
-    };
-
-    const ListType = struct {
-        method: Method,
-        pattern: [:0]const u8,
-        handler: MethodHandler,
-    };
-
-    fn CreateGroupFn(comptime method: Method) fn (comptime self: *Group, comptime pattern: [:0]const u8, handler: MethodHandler) *Group {
-        return struct {
-            fn temp(comptime self: *Group, comptime pattern: [:0]const u8, handler: MethodHandler) *Group {
-                self.list = self.list ++ .{ListType{ .method = method, .pattern = self.base_path ++ pattern, .handler = handler }};
-                return self;
-            }
-        }.temp;
-    }
-
-    /// Method should **ALWAYS** be lower case
-    fn CreateMethodFn(comptime method: []const u8) fn (app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
-        var temp_up: [10]u8 = undefined;
-        const upper_method = std.ascii.upperString(&temp_up, method);
-        const log_str = std.fmt.comptimePrint("Registering {s} route: ", .{upper_method}) ++ "{s}";
-
-        return struct {
-            fn temp(app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
-                if (app.logs_enabled) {
-                    std.log.info(log_str, .{pattern});
-                }
-                @field(c, std.fmt.comptimePrint("uws_app_{s}", .{method}))(app.ptr, pattern, handlerWrapper, @constCast(handler));
-                return app;
-            }
-        }.temp;
-    }
-
     pub const Group = struct {
         list: []const ListType = &.{},
         base_path: [:0]const u8,
+
+        const ListType = struct {
+            method: Method,
+            pattern: [:0]const u8,
+            handler: MethodHandler,
+        };
+
+        const Method = enum {
+            Get,
+            Post,
+            Put,
+            Options,
+            Del,
+            Patch,
+            Head,
+            Connect,
+            Trace,
+            Any,
+        };
 
         pub const get = CreateGroupFn(.Get);
         pub const post = CreateGroupFn(.Post);

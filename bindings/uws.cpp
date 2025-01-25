@@ -285,6 +285,10 @@ void uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior)
         handler(ptr, (uws_websocket_t *)ws, message.data(), message.length(), (uws_opcode_t)opcode);
     });
 
+    WEBSOCKET_HANDLER(dropped, (auto *ws, auto message, auto opcode), {
+        handler(ptr, (uws_websocket_t *)ws, message.data(), message.length(), (uws_opcode_t)opcode);
+    });
+
     WEBSOCKET_HANDLER(drain, (auto *ws), {
         handler(ptr, (uws_websocket_t *)ws);
     });

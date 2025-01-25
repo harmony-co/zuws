@@ -164,6 +164,7 @@ extern "C"
     HANDLE(upgrade, (__VA_ARGS__ uws_res_t * response, uws_req_t * request, uws_socket_context_t * context))     \
     HANDLE(open, (__VA_ARGS__ uws_websocket_t * ws))                                                             \
     HANDLE(message, (__VA_ARGS__ uws_websocket_t * ws, const char *message, size_t length, uws_opcode_t opcode)) \
+    HANDLE(dropped, (__VA_ARGS__ uws_websocket_t * ws, const char *message, size_t length, uws_opcode_t opcode)) \
     HANDLE(drain, (__VA_ARGS__ uws_websocket_t * ws))                                                            \
     HANDLE(ping, (__VA_ARGS__ uws_websocket_t * ws, const char *message, size_t length))                         \
     HANDLE(pong, (__VA_ARGS__ uws_websocket_t * ws, const char *message, size_t length))                         \

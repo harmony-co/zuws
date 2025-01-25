@@ -30,6 +30,7 @@ pub fn main() !void {
             .upgrade = on_upgrade,
             .open = on_open,
             .message = on_message,
+            .dropped = on_message,
             .drain = on_drain,
             .ping = on_ping,
             .pong = on_pong,

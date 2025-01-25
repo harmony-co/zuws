@@ -1,3 +1,4 @@
+const config = @import("config");
 const std = @import("std");
 const c = @import("uws");
 
@@ -6,6 +7,8 @@ const Request = @import("./Request.zig");
 
 const App = @This();
 
+const info = std.log.scoped(.uws_debug).info;
+
 pub const uWSError = error{
     CouldNotCreateApp,
 };
@@ -13,7 +16,6 @@ pub const uWSError = error{
 pub const MethodHandler = *const fn (*Response, *Request) void;
 
 ptr: *c.uws_app_s,
-logs_enabled: bool,
 
 pub const Group = struct {
     list: []const ListType = &.{},
@@ -63,9 +65,9 @@ pub const Group = struct {
     }
 };
 
-pub fn init(enable_logs: bool) uWSError!App {
+pub fn init() uWSError!App {
     const app = c.uws_create_app();
-    if (app) |ptr| return .{ .ptr = ptr, .logs_enabled = enable_logs };
+    if (app) |ptr| return .{ .ptr = ptr };
     return uWSError.CouldNotCreateApp;
 }
 
@@ -114,8 +116,8 @@ pub fn group(app: *const App, comptime g: Group) *const App {
 }
 
 pub fn ws(app: *const App, pattern: [:0]const u8, behavior: c.uws_socket_behavior_t) *const App {
-    if (app.logs_enabled) {
-        std.log.info("Registering WebSocket route: {s}", .{pattern});
+    if (config.debug_logs) {
+        info("Registering WebSocket route: {s}", .{pattern});
     }
     c.uws_ws(app.ptr, pattern, behavior);
     return app;
@@ -146,8 +148,8 @@ fn CreateMethodFn(comptime method: []const u8) fn (app: *const App, pattern: [:0
 
     return struct {
         fn temp(app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
-            if (app.logs_enabled) {
-                std.log.info(log_str, .{pattern});
+            if (config.debug_logs) {
+                info(log_str, .{pattern});
             }
             @field(c, std.fmt.comptimePrint("uws_app_{s}", .{method}))(app.ptr, pattern, handlerWrapper, @constCast(handler));
             return app;

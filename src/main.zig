@@ -7,7 +7,7 @@ const MethodHandler = App.MethodHandler;
 const c = @import("uws");
 
 pub fn main() !void {
-    const app = try App.init(true);
+    const app = try App.init();
     defer app.deinit();
 
     const api: App.Group = comptime blk: {

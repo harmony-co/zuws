@@ -1,27 +1,33 @@
 const std = @import("std");
 
-const SharedBuildOptions = struct { target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode };
+const SharedBuildOptions = struct {
+    target: std.Build.ResolvedTarget,
+    optimize: std.builtin.OptimizeMode,
+};
 
 pub fn build(b: *std.Build) !void {
-    var flags = std.ArrayList([]const u8).init(b.allocator);
-    defer flags.deinit();
-
-    const options = SharedBuildOptions{
+    const shared_options = SharedBuildOptions{
         .target = b.standardTargetOptions(.{}),
         .optimize = b.standardOptimizeOption(.{}),
     };
 
+    const config_options = b.addOptions();
+    const debug_logs = b.option(bool, "debug_logs", "Whether to enable debug logs for route creation.") orelse (shared_options.optimize == .Debug);
+
+    config_options.addOption(bool, "debug_logs", debug_logs);
+
     const proj_options = std.Build.ExecutableOptions{
         .name = "zuws",
         .root_source_file = b.path("src/main.zig"),
-        .target = options.target,
-        .optimize = options.optimize,
+        .target = shared_options.target,
+        .optimize = shared_options.optimize,
     };
 
-    const uWebSockets = try uWebSocketsLib(b, options, &flags);
+    const uWebSockets = try uWebSocketsLib(b, shared_options);
     const exe = b.addExecutable(proj_options);
     exe.linkLibrary(uWebSockets[0]);
     exe.root_module.addImport("uws", uWebSockets[1].createModule());
+    exe.root_module.addOptions("config", config_options);
     b.installArtifact(exe);
 
     const run_exe = b.addRunArtifact(exe);
@@ -47,8 +53,8 @@ pub fn build(b: *std.Build) !void {
     check.dependOn(&exe_check.step);
 }
 
-fn uWebSocketsLib(b: *std.Build, options: SharedBuildOptions, flags: *std.ArrayList([]const u8)) !struct { *std.Build.Step.Compile, *std.Build.Step.TranslateC } {
-    const uSockets = try uSocketsLib(b, options, flags);
+fn uWebSocketsLib(b: *std.Build, options: SharedBuildOptions) !struct { *std.Build.Step.Compile, *std.Build.Step.TranslateC } {
+    const uSockets = try uSocketsLib(b, options);
     const uWebSockets = b.addStaticLibrary(.{
         .name = "uWebSockets",
         .target = options.target,
@@ -68,7 +74,7 @@ fn uWebSocketsLib(b: *std.Build, options: SharedBuildOptions, flags: *std.ArrayL
     return .{ uWebSockets, uWS_c };
 }
 
-fn uSocketsLib(b: *std.Build, options: SharedBuildOptions, flags: *std.ArrayList([]const u8)) !*std.Build.Step.Compile {
+fn uSocketsLib(b: *std.Build, options: SharedBuildOptions) !*std.Build.Step.Compile {
     const uSockets = b.addStaticLibrary(.{
         .name = "uSockets",
         .target = options.target,
@@ -76,10 +82,6 @@ fn uSocketsLib(b: *std.Build, options: SharedBuildOptions, flags: *std.ArrayList
     });
 
     uSockets.linkSystemLibrary("zlib");
-
-    if (b.option(bool, "ssl", "Enable SSL support") orelse false) {
-        uSockets.linkLibCpp();
-    } else try flags.append("-DLIBUS_NO_SSL");
 
     uSockets.addIncludePath(b.path("uWebSockets/uSockets/src"));
     uSockets.installHeader(b.path("uWebSockets/uSockets/src/libusockets.h"), "libusockets.h");
@@ -91,7 +93,6 @@ fn uSocketsLib(b: *std.Build, options: SharedBuildOptions, flags: *std.ArrayList
         "quic.c",
         "socket.c",
         "udp.c",
-        "crypto/openssl.c",
         "crypto/sni_tree.cpp",
         "eventing/epoll_kqueue.c",
         "eventing/gcd.c",
@@ -104,7 +105,7 @@ fn uSocketsLib(b: *std.Build, options: SharedBuildOptions, flags: *std.ArrayList
     uSockets.addCSourceFiles(.{
         .root = b.path("uWebSockets/uSockets/src/"),
         .files = uSocketsSourceFiles,
-        .flags = flags.items,
+        .flags = &.{"-DLIBUS_NO_SSL"},
     });
 
     return uSockets;

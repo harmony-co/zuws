@@ -57,26 +57,27 @@ fn hello2(res: *Response, req: *Request) void {
 }
 
 fn on_upgrade(res: *Response, req: *Request) void {
-    std.debug.print("{any} | {any}\n", .{ res, req });
+    std.debug.print("Upgrade: {any} | {any}\n", .{ res, req });
 }
 fn on_open(ws: *WebSocket) void {
-    std.debug.print("{any}\n", .{ws});
+    std.debug.print("Open: {any}\n", .{ws});
+    _ = ws.subscribe("NonsensicalTest");
 }
 fn on_message(ws: *WebSocket, message: []const u8, opcode: WebSocket.Opcode) void {
-    std.debug.print("{any} | {any} | {any}\n", .{ ws, message, opcode });
+    std.debug.print("Message: {any} | {any} | {any}\n", .{ ws, message, opcode });
 }
 fn on_drain(ws: *WebSocket) void {
-    std.debug.print("{any}\n", .{ws});
+    std.debug.print("Drain: {any}\n", .{ws});
 }
 fn on_ping(ws: *WebSocket, message: []const u8) void {
-    std.debug.print("{any} | {any}\n", .{ ws, message });
+    std.debug.print("Ping: {any} | {any}\n", .{ ws, message });
 }
 fn on_pong(ws: *WebSocket, message: []const u8) void {
-    std.debug.print("{any} | {any}\n", .{ ws, message });
+    std.debug.print("Pong: {any} | {any}\n", .{ ws, message });
 }
 fn on_close(ws: *WebSocket, code: i32, message: []const u8) void {
-    std.debug.print("{any} | {any} | {any}\n", .{ ws, code, message });
+    std.debug.print("Close: {any} | {any} | {any}\n", .{ ws, code, message });
 }
 fn on_subscription(ws: *WebSocket, topic: []const u8, newNumberOfSubscribers: i32, oldNumberOfSubscribers: i32) void {
-    std.debug.print("{any} | {any} | {any} | {any}\n", .{ ws, topic, newNumberOfSubscribers, oldNumberOfSubscribers });
+    std.debug.print("Subscription: {any} | {any} | {any} | {any}\n", .{ ws, topic, newNumberOfSubscribers, oldNumberOfSubscribers });
 }

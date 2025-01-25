@@ -75,7 +75,8 @@
     "cinttypes": "cpp",
     "variant": "cpp",
     "semaphore": "cpp",
-    "locale": "cpp"
+    "locale": "cpp",
+    "*.ipp": "cpp"
   },
   "lldb.displayFormat": "auto",
   "lldb.showDisassembly": "auto",

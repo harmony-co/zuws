@@ -13,9 +13,9 @@ pub fn end(res: *const Response, data: [:0]const u8, close_connection: bool) voi
     c.uws_res_end(res.ptr, data, data.len, close_connection);
 }
 
-pub fn cork(res: *const Response, callback: ?*const fn (*const c.uws_res_t) callconv(.C) void) void {
-    c.uws_res_cork(res.ptr, callback);
-}
+// pub fn cork(res: *const Response, callback: ?*const fn (*const c.uws_res_t) callconv(.C) void) void {
+//     c.uws_res_cork(res.ptr, callback);
+// }
 
 pub fn pause(res: *const Response) void {
     c.uws_res_pause(res.ptr);
@@ -49,7 +49,7 @@ pub fn write(res: *const Response, data: [:0]const u8) bool {
     return c.uws_res_write(res.ptr, data, data.len);
 }
 
-pub fn overrideWriteOffset(res: *const Response, offset: c_ulong) void {
+pub fn overrideWriteOffset(res: *const Response, offset: u64) void {
     c.uws_res_override_write_offset(res.ptr, offset);
 }
 
@@ -57,6 +57,7 @@ pub fn hasResponded(res: *const Response) bool {
     return c.uws_res_has_responded(res.ptr);
 }
 
+// TODO: Look into implementing wrappers for these
 pub fn onWritable(res: *const Response, handler: c.uws_res_on_writable_handler) void {
     c.uws_res_on_writable(res.ptr, handler);
 }
@@ -94,11 +95,11 @@ pub fn upgrade(
     );
 }
 
-pub fn tryEnd(res: *const Response, data: [:0]const u8, totalSize: c_ulong, close_connection: bool) c.uws_try_end_result_t {
+pub fn tryEnd(res: *const Response, data: [:0]const u8, totalSize: u64, close_connection: bool) c.uws_try_end_result_t {
     return c.uws_res_try_end(res.ptr, data, data.len, totalSize, close_connection);
 }
 
-pub fn getWriteOffset(res: *const Response) c_ulong {
+pub fn getWriteOffset(res: *const Response) u64 {
     return c.uws_res_get_write_offset(res.ptr);
 }
 

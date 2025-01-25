@@ -117,13 +117,14 @@ pub fn group(app: *const App, comptime g: Group) *const App {
 
 pub const WebSocketBehavior = struct {
     compression: WebSocket.CompressOptions = .DISABLED,
-    maxPayloadLength: c_uint = std.mem.zeroes(c_uint),
-    idleTimeout: c_ushort = std.mem.zeroes(c_ushort),
-    maxBackpressure: c_uint = std.mem.zeroes(c_uint),
-    closeOnBackpressureLimit: bool = std.mem.zeroes(bool),
-    resetIdleTimeoutOnSend: bool = std.mem.zeroes(bool),
-    sendPingsAutomatically: bool = std.mem.zeroes(bool),
-    maxLifetime: c_ushort = std.mem.zeroes(c_ushort),
+    maxPayloadLength: u32 = 0,
+    /// In seconds
+    idleTimeout: u16 = 0,
+    maxBackpressure: u32 = 0,
+    closeOnBackpressureLimit: bool = false,
+    resetIdleTimeoutOnSend: bool = false,
+    sendPingsAutomatically: bool = false,
+    maxLifetime: u16 = 0,
     upgrade: *const fn (res: *Response, req: *Request) void,
     open: *const fn (ws: *WebSocket) void,
     message: *const fn (ws: *WebSocket, message: []const u8, opcode: WebSocket.Opcode) void,

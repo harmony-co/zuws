@@ -26,6 +26,9 @@ pub fn main() !void {
     try app.group(api)
         .ws("/ws", .{
         // zig fmt: off
+            .idleTimeout = 10,
+            .resetIdleTimeoutOnSend = true,
+            .sendPingsAutomatically = true,
             .maxPayloadLength = 1024,
             .upgrade = on_upgrade,
             .open = on_open,

@@ -1,19 +1,19 @@
-const config = @import("config");
-const std = @import("std");
 const c = @import("uws");
-
-const Response = @import("./Response.zig");
+const std = @import("std");
+const config = @import("config");
 const Request = @import("./Request.zig");
+const Response = @import("./Response.zig");
+const WebSocket = @import("./WebSocket.zig");
+
+const info = std.log.scoped(.uws_debug).info;
 
 const App = @This();
 
-const info = std.log.scoped(.uws_debug).info;
+pub const MethodHandler = *const fn (*Response, *Request) void;
 
 pub const uWSError = error{
     CouldNotCreateApp,
 };
-
-pub const MethodHandler = *const fn (*Response, *Request) void;
 
 ptr: *c.uws_app_s,
 
@@ -115,11 +115,95 @@ pub fn group(app: *const App, comptime g: Group) *const App {
     return app;
 }
 
-pub fn ws(app: *const App, pattern: [:0]const u8, behavior: c.uws_socket_behavior_t) *const App {
+pub const WebSocketBehavior = struct {
+    compression: WebSocket.CompressOptions = .DISABLED,
+    maxPayloadLength: c_uint = std.mem.zeroes(c_uint),
+    idleTimeout: c_ushort = std.mem.zeroes(c_ushort),
+    maxBackpressure: c_uint = std.mem.zeroes(c_uint),
+    closeOnBackpressureLimit: bool = std.mem.zeroes(bool),
+    resetIdleTimeoutOnSend: bool = std.mem.zeroes(bool),
+    sendPingsAutomatically: bool = std.mem.zeroes(bool),
+    maxLifetime: c_ushort = std.mem.zeroes(c_ushort),
+    upgrade: *const fn (res: *Response, req: *Request) void,
+    open: *const fn (ws: *WebSocket) void,
+    message: *const fn (ws: *WebSocket, message: []const u8, opcode: WebSocket.Opcode) void,
+    drain: *const fn (ws: *WebSocket) void,
+    ping: *const fn (ws: *WebSocket, message: []const u8) void,
+    pong: *const fn (ws: *WebSocket, message: []const u8) void,
+    close: *const fn (ws: *WebSocket, code: i32, message: []const u8) void,
+    subscription: *const fn (ws: *WebSocket, topic: []const u8, newNumberOfSubscribers: i32, oldNumberOfSubscribers: i32) void,
+};
+
+fn upgradeWrapper(ptr: ?*anyopaque, rawRes: ?*c.uws_res_s, rawReq: ?*c.uws_req_t, context: ?*c.uws_socket_context_t) callconv(.C) void {
+    const handler_ptr: *const fn (*Response, *Request) void = @ptrCast(@alignCast(ptr));
+    var res = Response{ .ptr = rawRes orelse return };
+    const req = Request{ .ptr = rawReq orelse return };
+    handler_ptr(&res, @constCast(&req));
+    res.upgrade(&req, context);
+}
+
+fn openWrapper(ptr: ?*anyopaque, rawWs: ?*c.uws_websocket_t) callconv(.C) void {
+    const handler_ptr: *const fn (ws: *WebSocket) void = @ptrCast(@alignCast(ptr));
+    var w_s = WebSocket{ .ptr = rawWs orelse return };
+    handler_ptr(&w_s);
+}
+
+fn drainWrapper(ptr: ?*anyopaque, rawWs: ?*c.uws_websocket_t) callconv(.C) void {
+    const handler_ptr: *const fn (ws: *WebSocket) void = @ptrCast(@alignCast(ptr));
+    var w_s = WebSocket{ .ptr = rawWs orelse return };
+    handler_ptr(&w_s);
+}
+
+fn messageWrapper(ptr: ?*anyopaque, rawWs: ?*c.uws_websocket_t, message: [*c]const u8, length: usize, opcode: c.uws_opcode_t) callconv(.C) void {
+    const handler_ptr: *const fn (ws: *WebSocket, message: []const u8, opcode: WebSocket.Opcode) void = @ptrCast(@alignCast(ptr));
+    var w_s = WebSocket{ .ptr = rawWs orelse return };
+    handler_ptr(&w_s, message[0..length], @enumFromInt(opcode));
+}
+
+fn pingWrapper(ptr: ?*anyopaque, rawWs: ?*c.uws_websocket_t, message: [*c]const u8, length: usize) callconv(.C) void {
+    const handler_ptr: *const fn (ws: *WebSocket, message: []const u8) void = @ptrCast(@alignCast(ptr));
+    var w_s = WebSocket{ .ptr = rawWs orelse return };
+    handler_ptr(&w_s, message[0..length]);
+}
+
+fn closeWrapper(ptr: ?*anyopaque, rawWs: ?*c.uws_websocket_t, code: c_int, message: [*c]const u8, length: usize) callconv(.C) void {
+    const handler_ptr: *const fn (ws: *WebSocket, code: i32, message: []const u8) void = @ptrCast(@alignCast(ptr));
+    var w_s = WebSocket{ .ptr = rawWs orelse return };
+    handler_ptr(&w_s, code, message[0..length]);
+}
+
+fn subscriptionWrapper(ptr: ?*anyopaque, rawWs: ?*c.uws_websocket_t, topic_name: [*c]const u8, topic_name_length: usize, new_number_of_subscriber: c_int, old_number_of_subscriber: c_int) callconv(.C) void {
+    const handler_ptr: *const fn (ws: *WebSocket, topic: []const u8, new_number_of_subscriber: i32, old_number_of_subscriber: i32) void = @ptrCast(@alignCast(ptr));
+    var w_s = WebSocket{ .ptr = rawWs orelse return };
+    handler_ptr(&w_s, topic_name[0..topic_name_length], new_number_of_subscriber, old_number_of_subscriber);
+}
+
+pub fn ws(app: *const App, pattern: [:0]const u8, behavior: WebSocketBehavior) *const App {
     if (config.debug_logs) {
         info("Registering WebSocket route: {s}", .{pattern});
     }
-    c.uws_ws(app.ptr, pattern, behavior);
+
+    const b: c.uws_socket_behavior_t = .{
+        .compression = @intFromEnum(behavior.compression),
+        .maxPayloadLength = behavior.maxPayloadLength,
+        .idleTimeout = behavior.idleTimeout,
+        .maxBackpressure = behavior.maxBackpressure,
+        .closeOnBackpressureLimit = behavior.closeOnBackpressureLimit,
+        .resetIdleTimeoutOnSend = behavior.resetIdleTimeoutOnSend,
+        .sendPingsAutomatically = behavior.sendPingsAutomatically,
+        .maxLifetime = behavior.maxLifetime,
+
+        .upgrade = .{ .handler = upgradeWrapper, .ptr = @constCast(behavior.upgrade) },
+        .open = .{ .handler = openWrapper, .ptr = @constCast(behavior.open) },
+        .message = .{ .handler = messageWrapper, .ptr = @constCast(behavior.message) },
+        .drain = .{ .handler = drainWrapper, .ptr = @constCast(behavior.drain) },
+        .ping = .{ .handler = pingWrapper, .ptr = @constCast(behavior.ping) },
+        .pong = .{ .handler = pingWrapper, .ptr = @constCast(behavior.pong) },
+        .close = .{ .handler = closeWrapper, .ptr = @constCast(behavior.close) },
+        .subscription = .{ .handler = subscriptionWrapper, .ptr = @constCast(behavior.subscription) },
+    };
+
+    c.uws_ws(app.ptr, pattern, b);
     return app;
 }
 
@@ -156,28 +240,3 @@ fn CreateMethodFn(comptime method: []const u8) fn (app: *const App, pattern: [:0
         }
     }.temp;
 }
-
-const uWSCompressOptions = enum(c_int) {
-    _COMPRESSOR_MASK = c._COMPRESSOR_MASK,
-    _DECOMPRESSOR_MASK = c._DECOMPRESSOR_MASK,
-    DISABLED = c.DISABLED,
-    SHARED_COMPRESSOR = c.SHARED_COMPRESSOR,
-    SHARED_DECOMPRESSOR = c.SHARED_DECOMPRESSOR,
-    DEDICATED_DECOMPRESSOR_32KB = c.DEDICATED_DECOMPRESSOR_32KB,
-    DEDICATED_DECOMPRESSOR_16KB = c.DEDICATED_DECOMPRESSOR_16KB,
-    DEDICATED_DECOMPRESSOR_8KB = c.DEDICATED_DECOMPRESSOR_8KB,
-    DEDICATED_DECOMPRESSOR_4KB = c.DEDICATED_DECOMPRESSOR_4KB,
-    DEDICATED_DECOMPRESSOR_2KB = c.DEDICATED_DECOMPRESSOR_2KB,
-    DEDICATED_DECOMPRESSOR_1KB = c.DEDICATED_DECOMPRESSOR_1KB,
-    DEDICATED_DECOMPRESSOR_512B = c.DEDICATED_DECOMPRESSOR_512B,
-    DEDICATED_DECOMPRESSOR = c.DEDICATED_DECOMPRESSOR,
-    DEDICATED_COMPRESSOR_3KB = c.DEDICATED_COMPRESSOR_3KB,
-    DEDICATED_COMPRESSOR_4KB = c.DEDICATED_COMPRESSOR_4KB,
-    DEDICATED_COMPRESSOR_8KB = c.DEDICATED_COMPRESSOR_8KB,
-    DEDICATED_COMPRESSOR_16KB = c.DEDICATED_COMPRESSOR_16KB,
-    DEDICATED_COMPRESSOR_32KB = c.DEDICATED_COMPRESSOR_32KB,
-    DEDICATED_COMPRESSOR_64KB = c.DEDICATED_COMPRESSOR_64KB,
-    DEDICATED_COMPRESSOR_128KB = c.DEDICATED_COMPRESSOR_128KB,
-    DEDICATED_COMPRESSOR_256KB = c.DEDICATED_COMPRESSOR_256KB,
-    DEDICATED_COMPRESSOR = c.DEDICATED_COMPRESSOR,
-};

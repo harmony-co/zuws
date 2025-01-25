@@ -2,6 +2,7 @@ const std = @import("std");
 const App = @import("./App.zig");
 const Request = @import("./Request.zig");
 const Response = @import("./Response.zig");
+const WebSocket = @import("./WebSocket.zig");
 const MethodHandler = App.MethodHandler;
 
 const c = @import("uws");
@@ -26,22 +27,19 @@ pub fn main() !void {
         .ws("/ws", .{
         // zig fmt: off
             .maxPayloadLength = 1024,
-            .upgrade = .{ .handler = upgradeWrapper, .ptr = @constCast(&on_upgrade) },
-            .open = .{ .handler = &on_open, .ptr = null },
-            .close = .{ .handler = &on_close, .ptr = null },
-            .message = .{ .handler = &on_message, .ptr = null },
+            .upgrade = on_upgrade,
+            .open = on_open,
+            .message = on_message,
+            .drain = on_drain,
+            .ping = on_ping,
+            .pong = on_pong,
+            .close = on_close,
+            .subscription = on_subscription,
         })
         // zig fmt: on
         .get("/get", hello)
         .get("/get/:id", hello2)
         .listen(3001, null);
-}
-
-fn upgradeWrapper(ptr: ?*anyopaque, rawRes: ?*c.uws_res_s, rawReq: ?*c.uws_req_t, context: ?*c.uws_socket_context_t) callconv(.C) void {
-    const handler_ptr: *const fn (*Response, *Request, ?*c.uws_socket_context_t) void = @ptrCast(@alignCast(ptr));
-    var res = Response{ .ptr = rawRes orelse return };
-    var req = Request{ .ptr = rawReq orelse return };
-    handler_ptr(&res, &req, context);
 }
 
 fn hello(res: *Response, req: *Request) void {
@@ -57,22 +55,27 @@ fn hello2(res: *Response, req: *Request) void {
     res.end(str, false);
 }
 
-fn on_upgrade(res: *Response, req: *Request, context: ?*c.uws_socket_context_t) void {
-    res.upgrade(req, context);
+fn on_upgrade(res: *Response, req: *Request) void {
+    std.debug.print("{any} | {any}\n", .{ res, req });
 }
-
-fn on_open(ptr: ?*anyopaque, ws: ?*c.uws_websocket_t) callconv(.C) void {
-    _ = ptr;
-    std.debug.print("Opened with {any}\n", .{ws});
+fn on_open(ws: *WebSocket) void {
+    std.debug.print("{any}\n", .{ws});
 }
-
-fn on_close(ptr: ?*anyopaque, ws: ?*c.uws_websocket_t, code: c_int, message: [*c]const u8, length: usize) callconv(.C) void {
-    _ = ptr;
-    c.uws_ws_close(ws);
-    std.debug.print("Closed with {s} | {d} | {d}\n", .{ message, length, code });
+fn on_message(ws: *WebSocket, message: []const u8, opcode: WebSocket.Opcode) void {
+    std.debug.print("{any} | {any} | {any}\n", .{ ws, message, opcode });
 }
-
-fn on_message(ptr: ?*anyopaque, ws: ?*c.uws_websocket_t, message: [*c]const u8, length: usize, opcode: c.uws_opcode_t) callconv(.C) void {
-    _ = ptr;
-    _ = c.uws_ws_send(ws, message, length, opcode);
+fn on_drain(ws: *WebSocket) void {
+    std.debug.print("{any}\n", .{ws});
+}
+fn on_ping(ws: *WebSocket, message: []const u8) void {
+    std.debug.print("{any} | {any}\n", .{ ws, message });
+}
+fn on_pong(ws: *WebSocket, message: []const u8) void {
+    std.debug.print("{any} | {any}\n", .{ ws, message });
+}
+fn on_close(ws: *WebSocket, code: i32, message: []const u8) void {
+    std.debug.print("{any} | {any} | {any}\n", .{ ws, code, message });
+}
+fn on_subscription(ws: *WebSocket, topic: []const u8, newNumberOfSubscribers: i32, oldNumberOfSubscribers: i32) void {
+    std.debug.print("{any} | {any} | {any} | {any}\n", .{ ws, topic, newNumberOfSubscribers, oldNumberOfSubscribers });
 }

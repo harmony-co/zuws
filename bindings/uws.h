@@ -4,9 +4,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#ifndef uws_h
-#define uws_h
-
 #ifdef __cplusplus
 extern "C"
 {
@@ -228,5 +225,3 @@ extern "C"
 #ifdef __cplusplus
 } // extern "C"
 #endif
-
-#endif // uws_h

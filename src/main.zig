@@ -65,6 +65,7 @@ fn on_open(ws: *WebSocket) void {
 }
 fn on_message(ws: *WebSocket, message: []const u8, opcode: WebSocket.Opcode) void {
     std.debug.print("Message: {any} | {any} | {any}\n", .{ ws, message, opcode });
+    _ = ws.send("UwU", .TEXT);
 }
 fn on_drain(ws: *WebSocket) void {
     std.debug.print("Drain: {any}\n", .{ws});

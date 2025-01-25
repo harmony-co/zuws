@@ -47,11 +47,11 @@ pub fn close(self: *const WebSocket) void {
 }
 
 pub fn send(self: *const WebSocket, message: [:0]const u8, opcode: Opcode) Status {
-    return @enumFromInt(c.uws_ws_send(self.ptr, message, message.len, opcode));
+    return @enumFromInt(c.uws_ws_send(self.ptr, message, message.len, @intFromEnum(opcode)));
 }
 
 pub fn sendWithOptions(self: *const WebSocket, message: [:0]const u8, opcode: Opcode, compress: bool, fin: bool) Status {
-    return @enumFromInt(c.uws_ws_send_with_options(self.ptr, message, message.len, opcode, compress, fin));
+    return @enumFromInt(c.uws_ws_send_with_options(self.ptr, message, message.len, @intFromEnum(opcode), compress, fin));
 }
 
 pub fn sendFragment(self: *const WebSocket, message: [:0]const u8, compress: bool) Status {
@@ -63,7 +63,7 @@ pub fn sendFirstFragment(self: *const WebSocket, message: [:0]const u8, compress
 }
 
 pub fn sendFirstFragmentWithOpcode(self: *const WebSocket, message: [:0]const u8, opcode: Opcode, compress: bool) Status {
-    return @enumFromInt(c.uws_ws_send_first_fragment_with_opcode(self.ptr, message, message.len, opcode, compress));
+    return @enumFromInt(c.uws_ws_send_first_fragment_with_opcode(self.ptr, message, message.len, @intFromEnum(opcode), compress));
 }
 
 pub fn sendLastFragment(self: *const WebSocket, message: [:0]const u8, compress: bool) Status {

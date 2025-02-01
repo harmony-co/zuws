@@ -126,59 +126,73 @@ pub const WebSocketBehavior = struct {
     resetIdleTimeoutOnSend: bool = false,
     sendPingsAutomatically: bool = false,
     maxLifetime: u16 = 0,
-    upgrade: *const fn (res: *Response, req: *Request) void,
-    open: *const fn (ws: *WebSocket) void,
-    message: *const fn (ws: *WebSocket, message: []const u8, opcode: WebSocket.Opcode) void,
-    dropped: *const fn (ws: *WebSocket, message: []const u8, opcode: WebSocket.Opcode) void,
-    drain: *const fn (ws: *WebSocket) void,
-    ping: *const fn (ws: *WebSocket, message: []const u8) void,
-    pong: *const fn (ws: *WebSocket, message: []const u8) void,
-    close: *const fn (ws: *WebSocket, code: i32, message: []const u8) void,
-    subscription: *const fn (ws: *WebSocket, topic: []const u8, newNumberOfSubscribers: i32, oldNumberOfSubscribers: i32) void,
+    upgrade: ?*const fn (res: *Response, req: *Request) void = null,
+    open: ?*const fn (ws: *WebSocket) void = null,
+    message: ?*const fn (ws: *WebSocket, message: []const u8, opcode: WebSocket.Opcode) void = null,
+    dropped: ?*const fn (ws: *WebSocket, message: []const u8, opcode: WebSocket.Opcode) void = null,
+    drain: ?*const fn (ws: *WebSocket) void = null,
+    ping: ?*const fn (ws: *WebSocket, message: []const u8) void = null,
+    pong: ?*const fn (ws: *WebSocket, message: []const u8) void = null,
+    close: ?*const fn (ws: *WebSocket, code: i32, message: []const u8) void = null,
+    subscription: ?*const fn (ws: *WebSocket, topic: []const u8, newNumberOfSubscribers: i32, oldNumberOfSubscribers: i32) void = null,
 };
 
 fn upgradeWrapper(ptr: ?*anyopaque, rawRes: ?*c.uws_res_s, rawReq: ?*c.uws_req_t, context: ?*c.uws_socket_context_t) callconv(.C) void {
-    const handler_ptr: *const fn (*Response, *Request) void = @ptrCast(@alignCast(ptr));
-    var res = Response{ .ptr = rawRes orelse return };
-    const req = Request{ .ptr = rawReq orelse return };
-    handler_ptr(&res, @constCast(&req));
-    res.upgrade(&req, context);
+    if (ptr) |p| {
+        const handler_ptr: *const fn (*Response, *Request) void = @ptrCast(@alignCast(p));
+        var res = Response{ .ptr = rawRes orelse return };
+        const req = Request{ .ptr = rawReq orelse return };
+        handler_ptr(&res, @constCast(&req));
+        res.upgrade(&req, context);
+    }
 }
 
 fn openWrapper(ptr: ?*anyopaque, rawWs: ?*c.uws_websocket_t) callconv(.C) void {
-    const handler_ptr: *const fn (ws: *WebSocket) void = @ptrCast(@alignCast(ptr));
-    var w_s = WebSocket{ .ptr = rawWs orelse return };
-    handler_ptr(&w_s);
+    if (ptr) |p| {
+        const handler_ptr: *const fn (ws: *WebSocket) void = @ptrCast(@alignCast(p));
+        var w_s = WebSocket{ .ptr = rawWs orelse return };
+        handler_ptr(&w_s);
+    }
 }
 
 fn drainWrapper(ptr: ?*anyopaque, rawWs: ?*c.uws_websocket_t) callconv(.C) void {
-    const handler_ptr: *const fn (ws: *WebSocket) void = @ptrCast(@alignCast(ptr));
-    var w_s = WebSocket{ .ptr = rawWs orelse return };
-    handler_ptr(&w_s);
+    if (ptr) |p| {
+        const handler_ptr: *const fn (ws: *WebSocket) void = @ptrCast(@alignCast(p));
+        var w_s = WebSocket{ .ptr = rawWs orelse return };
+        handler_ptr(&w_s);
+    }
 }
 
 fn messageWrapper(ptr: ?*anyopaque, rawWs: ?*c.uws_websocket_t, message: [*c]const u8, length: usize, opcode: c.uws_opcode_t) callconv(.C) void {
-    const handler_ptr: *const fn (ws: *WebSocket, message: []const u8, opcode: WebSocket.Opcode) void = @ptrCast(@alignCast(ptr));
-    var w_s = WebSocket{ .ptr = rawWs orelse return };
-    handler_ptr(&w_s, message[0..length], @enumFromInt(opcode));
+    if (ptr) |p| {
+        const handler_ptr: *const fn (ws: *WebSocket, message: []const u8, opcode: WebSocket.Opcode) void = @ptrCast(@alignCast(p));
+        var w_s = WebSocket{ .ptr = rawWs orelse return };
+        handler_ptr(&w_s, message[0..length], @enumFromInt(opcode));
+    }
 }
 
 fn pingWrapper(ptr: ?*anyopaque, rawWs: ?*c.uws_websocket_t, message: [*c]const u8, length: usize) callconv(.C) void {
-    const handler_ptr: *const fn (ws: *WebSocket, message: []const u8) void = @ptrCast(@alignCast(ptr));
-    var w_s = WebSocket{ .ptr = rawWs orelse return };
-    handler_ptr(&w_s, message[0..length]);
+    if (ptr) |p| {
+        const handler_ptr: *const fn (ws: *WebSocket, message: []const u8) void = @ptrCast(@alignCast(p));
+        var w_s = WebSocket{ .ptr = rawWs orelse return };
+        handler_ptr(&w_s, message[0..length]);
+    }
 }
 
 fn closeWrapper(ptr: ?*anyopaque, rawWs: ?*c.uws_websocket_t, code: c_int, message: [*c]const u8, length: usize) callconv(.C) void {
-    const handler_ptr: *const fn (ws: *WebSocket, code: i32, message: []const u8) void = @ptrCast(@alignCast(ptr));
-    var w_s = WebSocket{ .ptr = rawWs orelse return };
-    handler_ptr(&w_s, code, message[0..length]);
+    if (ptr) |p| {
+        const handler_ptr: *const fn (ws: *WebSocket, code: i32, message: []const u8) void = @ptrCast(@alignCast(p));
+        var w_s = WebSocket{ .ptr = rawWs orelse return };
+        handler_ptr(&w_s, code, message[0..length]);
+    }
 }
 
 fn subscriptionWrapper(ptr: ?*anyopaque, rawWs: ?*c.uws_websocket_t, topic_name: [*c]const u8, topic_name_length: usize, new_number_of_subscriber: c_int, old_number_of_subscriber: c_int) callconv(.C) void {
-    const handler_ptr: *const fn (ws: *WebSocket, topic: []const u8, new_number_of_subscriber: i32, old_number_of_subscriber: i32) void = @ptrCast(@alignCast(ptr));
-    var w_s = WebSocket{ .ptr = rawWs orelse return };
-    handler_ptr(&w_s, topic_name[0..topic_name_length], new_number_of_subscriber, old_number_of_subscriber);
+    if (ptr) |p| {
+        const handler_ptr: *const fn (ws: *WebSocket, topic: []const u8, new_number_of_subscriber: i32, old_number_of_subscriber: i32) void = @ptrCast(@alignCast(p));
+        var w_s = WebSocket{ .ptr = rawWs orelse return };
+        handler_ptr(&w_s, topic_name[0..topic_name_length], new_number_of_subscriber, old_number_of_subscriber);
+    }
 }
 
 pub fn ws(app: *const App, pattern: [:0]const u8, behavior: WebSocketBehavior) *const App {

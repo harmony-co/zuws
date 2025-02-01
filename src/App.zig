@@ -17,6 +17,20 @@ pub const uWSError = error{
 
 ptr: *c.uws_app_s,
 
+// TODO: Discuss if maybe this should be UPPER_CASE
+pub const Method = enum {
+    Get,
+    Post,
+    Put,
+    Options,
+    Del,
+    Patch,
+    Head,
+    Connect,
+    Trace,
+    Any,
+};
+
 pub const Group = struct {
     list: []const ListType = &.{},
     base_path: [:0]const u8,
@@ -25,19 +39,6 @@ pub const Group = struct {
         method: Method,
         pattern: [:0]const u8,
         handler: MethodHandler,
-    };
-
-    const Method = enum {
-        Get,
-        Post,
-        Put,
-        Options,
-        Del,
-        Patch,
-        Head,
-        Connect,
-        Trace,
-        Any,
     };
 
     pub const get = CreateGroupFn(.Get);
@@ -217,7 +218,7 @@ fn handlerWrapper(ptr: ?*anyopaque, rawRes: ?*c.uws_res_s, rawReq: ?*c.uws_req_s
     handler_ptr(&res, &req);
 }
 
-fn CreateGroupFn(comptime method: App.Group.Method) fn (comptime self: *App.Group, comptime pattern: [:0]const u8, handler: MethodHandler) *App.Group {
+fn CreateGroupFn(comptime method: App.Method) fn (comptime self: *App.Group, comptime pattern: [:0]const u8, handler: MethodHandler) *App.Group {
     return struct {
         fn temp(comptime self: *App.Group, comptime pattern: [:0]const u8, handler: MethodHandler) *App.Group {
             self.list = self.list ++ .{App.Group.ListType{ .method = method, .pattern = self.base_path ++ pattern, .handler = handler }};

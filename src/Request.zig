@@ -1,5 +1,6 @@
 const c = @import("uws");
 const std = @import("std");
+const App = @import("./App.zig");
 
 const Request = @This();
 
@@ -17,11 +18,16 @@ pub fn getFullUrl(res: *const Request) []const u8 {
     return temp[0..len];
 }
 
-/// Normalize method to lower case
-pub fn getMethod(res: *const Request) []const u8 {
-    const method = getCaseSensitiveMethod(res);
-    var temp: [8]u8 = undefined;
-    return std.ascii.lowerString(&temp, method);
+pub fn getMethod(res: *const Request) !App.Method {
+    var method = @constCast(getCaseSensitiveMethod(res));
+    for (method, 0..) |char, i| {
+        method[i] = if (i == 0)
+            std.ascii.toUpper(char)
+        else
+            std.ascii.toLower(char);
+    }
+
+    return std.meta.stringToEnum(App.Method, method) orelse error.UnknownMethod;
 }
 
 pub fn getCaseSensitiveMethod(res: *const Request) []const u8 {

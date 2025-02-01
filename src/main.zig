@@ -53,7 +53,8 @@ fn hello(res: *Response, req: *Request) void {
 }
 
 fn hello2(res: *Response, req: *Request) void {
-    std.debug.print("{s}\n", .{req.getMethod()});
+    const method = req.getMethod() catch unreachable;
+    std.debug.print("{any}\n", .{method});
     std.debug.print("{s}\n", .{req.getParameterByIndex(0)});
     const str = "Hello World!\n";
     res.end(str, false);

@@ -20,11 +20,11 @@ pub fn getFullUrl(res: *const Request) []const u8 {
 
 pub fn getMethod(res: *const Request) !App.Method {
     var method = @constCast(getCaseSensitiveMethod(res));
-    for (method, 0..) |char, i| {
-        method[i] = if (i == 0)
-            std.ascii.toUpper(char)
-        else
-            std.ascii.toLower(char);
+    method[0] = std.ascii.toUpper(method[0]);
+
+    var i: u8 = 1;
+    while (method.len > i) : (i += 1) {
+        method[i] = std.ascii.toLower(method[i]);
     }
 
     return std.meta.stringToEnum(App.Method, method) orelse error.UnknownMethod;

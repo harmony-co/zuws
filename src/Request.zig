@@ -22,9 +22,8 @@ pub fn getMethod(res: *const Request) !App.Method {
     var method = @constCast(res.getCaseSensitiveMethod());
     method[0] = std.ascii.toUpper(method[0]);
 
-    var i: u8 = 1;
-    while (method.len > i) : (i += 1) {
-        method[i] = std.ascii.toLower(method[i]);
+    for (method[1..]) |*char| {
+        char.* = std.ascii.toLower(char.*);
     }
 
     return std.meta.stringToEnum(App.Method, method) orelse error.UnknownMethod;

@@ -19,7 +19,7 @@ pub fn getFullUrl(res: *const Request) []const u8 {
 }
 
 pub fn getMethod(res: *const Request) !App.Method {
-    var method = @constCast(getCaseSensitiveMethod(res));
+    var method = @constCast(res.getCaseSensitiveMethod());
     method[0] = std.ascii.toUpper(method[0]);
 
     var i: u8 = 1;

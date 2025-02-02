@@ -74,6 +74,15 @@ pub const Group = struct {
             return self;
         }
     }
+
+    fn CreateGroupFn(comptime method: App.Method) fn (comptime self: *App.Group, comptime pattern: [:0]const u8, handler: MethodHandler) *App.Group {
+        return struct {
+            fn temp(comptime self: *App.Group, comptime pattern: [:0]const u8, handler: MethodHandler) *App.Group {
+                self.list = self.list ++ .{App.Group.ListType{ .method = method, .pattern = self.base_path ++ pattern, .handler = handler }};
+                return self;
+            }
+        }.temp;
+    }
 };
 
 pub fn init() uWSError!App {
@@ -124,6 +133,43 @@ pub fn group(app: *const App, comptime g: Group) *const App {
         }
     }
     return app;
+}
+
+pub fn ws(app: *const App, pattern: [:0]const u8, behavior: WebSocketBehavior) *const App {
+    if (config.debug_logs) {
+        info("Registering WebSocket route: {s}", .{pattern});
+    }
+
+    var b: c.uws_socket_behavior_t = .{
+        .compression = @intFromEnum(behavior.compression),
+        .maxPayloadLength = behavior.maxPayloadLength,
+        .idleTimeout = behavior.idleTimeout,
+        .maxBackpressure = behavior.maxBackpressure,
+        .closeOnBackpressureLimit = behavior.closeOnBackpressureLimit,
+        .resetIdleTimeoutOnSend = behavior.resetIdleTimeoutOnSend,
+        .sendPingsAutomatically = behavior.sendPingsAutomatically,
+        .maxLifetime = behavior.maxLifetime,
+    };
+
+    if (behavior.upgrade) |f| b.upgrade = .{ .handler = upgradeWrapper, .ptr = @constCast(f) };
+    if (behavior.open) |f| b.open = .{ .handler = openWrapper, .ptr = @constCast(f) };
+    if (behavior.message) |f| b.message = .{ .handler = messageWrapper, .ptr = @constCast(f) };
+    if (behavior.dropped) |f| b.dropped = .{ .handler = messageWrapper, .ptr = @constCast(f) };
+    if (behavior.drain) |f| b.drain = .{ .handler = drainWrapper, .ptr = @constCast(f) };
+    if (behavior.ping) |f| b.ping = .{ .handler = pingWrapper, .ptr = @constCast(f) };
+    if (behavior.pong) |f| b.pong = .{ .handler = pingWrapper, .ptr = @constCast(f) };
+    if (behavior.close) |f| b.close = .{ .handler = closeWrapper, .ptr = @constCast(f) };
+    if (behavior.subscription) |f| b.subscription = .{ .handler = subscriptionWrapper, .ptr = @constCast(f) };
+
+    c.uws_ws(app.ptr, pattern, b);
+    return app;
+}
+
+fn handlerWrapper(ptr: ?*anyopaque, rawRes: ?*c.uws_res_s, rawReq: ?*c.uws_req_s) callconv(.C) void {
+    const handler_ptr: MethodHandler = @ptrCast(@alignCast(ptr));
+    var res = Response{ .ptr = rawRes orelse return };
+    var req = Request{ .ptr = rawReq orelse return };
+    handler_ptr(&res, &req);
 }
 
 // https://github.com/harmony-co/uWebSocketsZig/blob/main/uWebSockets/src/App.h#L234
@@ -197,52 +243,6 @@ fn subscriptionWrapper(
     const handler_ptr: *const fn (ws: *WebSocket, topic: []const u8, new_number_of_subscriber: i32, old_number_of_subscriber: i32) void = @ptrCast(@alignCast(ptr));
     var w_s = WebSocket{ .ptr = rawWs orelse return };
     handler_ptr(&w_s, topic_name[0..topic_name_length], new_number_of_subscriber, old_number_of_subscriber);
-}
-
-pub fn ws(app: *const App, pattern: [:0]const u8, behavior: WebSocketBehavior) *const App {
-    if (config.debug_logs) {
-        info("Registering WebSocket route: {s}", .{pattern});
-    }
-
-    var b: c.uws_socket_behavior_t = .{
-        .compression = @intFromEnum(behavior.compression),
-        .maxPayloadLength = behavior.maxPayloadLength,
-        .idleTimeout = behavior.idleTimeout,
-        .maxBackpressure = behavior.maxBackpressure,
-        .closeOnBackpressureLimit = behavior.closeOnBackpressureLimit,
-        .resetIdleTimeoutOnSend = behavior.resetIdleTimeoutOnSend,
-        .sendPingsAutomatically = behavior.sendPingsAutomatically,
-        .maxLifetime = behavior.maxLifetime,
-    };
-
-    if (behavior.upgrade) |f| b.upgrade = .{ .handler = upgradeWrapper, .ptr = @constCast(f) };
-    if (behavior.open) |f| b.open = .{ .handler = openWrapper, .ptr = @constCast(f) };
-    if (behavior.message) |f| b.message = .{ .handler = messageWrapper, .ptr = @constCast(f) };
-    if (behavior.dropped) |f| b.dropped = .{ .handler = messageWrapper, .ptr = @constCast(f) };
-    if (behavior.drain) |f| b.drain = .{ .handler = drainWrapper, .ptr = @constCast(f) };
-    if (behavior.ping) |f| b.ping = .{ .handler = pingWrapper, .ptr = @constCast(f) };
-    if (behavior.pong) |f| b.pong = .{ .handler = pingWrapper, .ptr = @constCast(f) };
-    if (behavior.close) |f| b.close = .{ .handler = closeWrapper, .ptr = @constCast(f) };
-    if (behavior.subscription) |f| b.subscription = .{ .handler = subscriptionWrapper, .ptr = @constCast(f) };
-
-    c.uws_ws(app.ptr, pattern, b);
-    return app;
-}
-
-fn handlerWrapper(ptr: ?*anyopaque, rawRes: ?*c.uws_res_s, rawReq: ?*c.uws_req_s) callconv(.C) void {
-    const handler_ptr: MethodHandler = @ptrCast(@alignCast(ptr));
-    var res = Response{ .ptr = rawRes orelse return };
-    var req = Request{ .ptr = rawReq orelse return };
-    handler_ptr(&res, &req);
-}
-
-fn CreateGroupFn(comptime method: App.Method) fn (comptime self: *App.Group, comptime pattern: [:0]const u8, handler: MethodHandler) *App.Group {
-    return struct {
-        fn temp(comptime self: *App.Group, comptime pattern: [:0]const u8, handler: MethodHandler) *App.Group {
-            self.list = self.list ++ .{App.Group.ListType{ .method = method, .pattern = self.base_path ++ pattern, .handler = handler }};
-            return self;
-        }
-    }.temp;
 }
 
 /// **Args**:

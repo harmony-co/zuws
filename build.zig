@@ -18,25 +18,21 @@ pub fn build(b: *std.Build) !void {
 
     const proj_options = .{
         .name = "zuws",
-        .root_source_file = b.path("src/root.zig"),
+        .root_source_file = b.path("src/main.zig"),
         .target = shared_options.target,
         .optimize = shared_options.optimize,
     };
 
-    const lib_options: std.Build.StaticLibraryOptions = proj_options;
-    var exe_options: std.Build.ExecutableOptions = proj_options;
+    var lib_options: std.Build.StaticLibraryOptions = proj_options;
+    const exe_options: std.Build.ExecutableOptions = proj_options;
     const test_options: std.Build.TestOptions = proj_options;
 
-    const lib = b.addStaticLibrary(lib_options);
-    b.installArtifact(lib);
+    lib_options.root_source_file = b.path("src/uws.zig");
     _ = b.addModule(lib_options.name, .{
         .root_source_file = lib_options.root_source_file,
-        .optimize = lib_options.optimize,
-        .target = lib_options.target,
     });
 
     const uWebSockets = try uWebSocketsLib(b, shared_options);
-    exe_options.root_source_file = b.path("src/main.zig");
     const exe = b.addExecutable(exe_options);
     exe.root_module.addOptions("config", config_options);
     exe.root_module.addImport("uws", uWebSockets[1].createModule());

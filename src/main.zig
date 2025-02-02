@@ -81,3 +81,8 @@ fn on_close(ws: *WebSocket, code: i32, message: []const u8) void {
 fn on_subscription(ws: *WebSocket, topic: []const u8, newNumberOfSubscribers: i32, oldNumberOfSubscribers: i32) void {
     std.debug.print("Subscription: {any} | {any} | {any} | {any}\n", .{ ws, topic, newNumberOfSubscribers, oldNumberOfSubscribers });
 }
+
+// Recursively test everything that is imported
+test {
+    std.testing.refAllDecls(@This());
+}

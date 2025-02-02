@@ -3,7 +3,6 @@ const App = @import("./App.zig");
 const Request = @import("./Request.zig");
 const Response = @import("./Response.zig");
 const WebSocket = @import("./WebSocket.zig");
-const MethodHandler = App.MethodHandler;
 
 const c = @import("uws");
 
@@ -12,8 +11,8 @@ pub fn main() !void {
     defer app.deinit();
 
     const api: App.Group = comptime blk: {
-        var g = App.Group{ .base_path = "/api" };
-        var v1 = App.Group{ .base_path = "/v1" };
+        var g = App.Group.init("/api");
+        var v1 = App.Group.init("/v1");
 
         // Maybe methods should not return self...
         _ = v1.get("/me", hello);
@@ -26,10 +25,6 @@ pub fn main() !void {
     try app.group(api)
         .ws("/ws", .{
         // zig fmt: off
-            .idleTimeout = 10,
-            .resetIdleTimeoutOnSend = true,
-            .sendPingsAutomatically = true,
-            .maxPayloadLength = 1024,
             .upgrade = on_upgrade,
             .open = on_open,
             .message = on_message,

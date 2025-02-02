@@ -17,7 +17,6 @@ pub const uWSError = error{
 
 ptr: *c.uws_app_s,
 
-// TODO: Discuss if maybe this should be UPPER_CASE
 pub const Method = enum {
     GET,
     POST,
@@ -42,6 +41,13 @@ pub const Group = struct {
         handler: MethodHandler,
     };
 
+    pub fn init(comptime path: [:0]const u8) Group {
+        std.debug.assert(path.len > 0);
+        std.debug.assert(!std.mem.containsAtLeast(u8, path, 1, &std.ascii.whitespace));
+
+        return .{ .base_path = path };
+    }
+
     pub const get = CreateGroupFn(.GET);
     pub const post = CreateGroupFn(.POST);
     pub const put = CreateGroupFn(.PUT);
@@ -53,6 +59,9 @@ pub const Group = struct {
     pub const trace = CreateGroupFn(.TRACE);
     pub const any = CreateGroupFn(.ANY);
 
+    // Maybe this should be renamed to `merge`
+    // Or maybe we could have a different merge function that
+    // actually merges the routes without taking into account the base path
     pub fn group(comptime self: *Group, grp: Group) *Group {
         comptime {
             for (grp.list) |item| {

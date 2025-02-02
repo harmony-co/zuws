@@ -178,7 +178,7 @@ fn handlerWrapper(ptr: ?*anyopaque, rawRes: ?*c.uws_res_s, rawReq: ?*c.uws_req_s
     handler_ptr(&res, &req);
 }
 
-// https://github.com/harmony-co/uWebSocketsZig/blob/main/uWebSockets/src/App.h#L234
+// https://github.com/uNetworking/uWebSockets/blob/b9b59b2b164489f3788223fec5821f77f7962d43/src/App.h#L234-L259
 pub const WebSocketBehavior = struct {
     compression: WebSocket.CompressOptions = .DISABLED,
     maxPayloadLength: u32 = 16 * 1024,

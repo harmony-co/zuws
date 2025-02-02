@@ -16,18 +16,31 @@ pub fn build(b: *std.Build) !void {
 
     config_options.addOption(bool, "debug_logs", debug_logs);
 
-    const proj_options = std.Build.ExecutableOptions{
+    const proj_options = .{
         .name = "zuws",
-        .root_source_file = b.path("src/main.zig"),
+        .root_source_file = b.path("src/root.zig"),
         .target = shared_options.target,
         .optimize = shared_options.optimize,
     };
 
+    const lib_options: std.Build.StaticLibraryOptions = proj_options;
+    var exe_options: std.Build.ExecutableOptions = proj_options;
+    const test_options: std.Build.TestOptions = proj_options;
+
+    const lib = b.addStaticLibrary(lib_options);
+    b.installArtifact(lib);
+    _ = b.addModule(lib_options.name, .{
+        .root_source_file = lib_options.root_source_file,
+        .optimize = lib_options.optimize,
+        .target = lib_options.target,
+    });
+
     const uWebSockets = try uWebSocketsLib(b, shared_options);
-    const exe = b.addExecutable(proj_options);
-    exe.linkLibrary(uWebSockets[0]);
-    exe.root_module.addImport("uws", uWebSockets[1].createModule());
+    exe_options.root_source_file = b.path("src/main.zig");
+    const exe = b.addExecutable(exe_options);
     exe.root_module.addOptions("config", config_options);
+    exe.root_module.addImport("uws", uWebSockets[1].createModule());
+    exe.linkLibrary(uWebSockets[0]);
     b.installArtifact(exe);
 
     const run_exe = b.addRunArtifact(exe);
@@ -47,10 +60,18 @@ pub fn build(b: *std.Build) !void {
     emit_asm.dependOn(&waf.step);
 
     const check = b.step("check", "Check if zuws compiles");
-    const exe_check = b.addExecutable(proj_options);
+    const exe_check = b.addExecutable(exe_options);
     exe_check.root_module.addImport("uws", uWebSockets[1].createModule());
     exe_check.linkLibrary(uWebSockets[0]);
     check.dependOn(&exe_check.step);
+
+    const test_step = b.step("test", "Run unit tests");
+    const lib_tests = b.addTest(test_options);
+    lib_tests.root_module.addOptions("config", config_options);
+    lib_tests.root_module.addImport("uws", uWebSockets[1].createModule());
+    lib_tests.linkLibrary(uWebSockets[0]);
+    const run_lib_tests = b.addRunArtifact(lib_tests);
+    test_step.dependOn(&run_lib_tests.step);
 }
 
 fn uWebSocketsLib(b: *std.Build, options: SharedBuildOptions) !struct { *std.Build.Step.Compile, *std.Build.Step.TranslateC } {

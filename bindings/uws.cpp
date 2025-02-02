@@ -36,11 +36,6 @@ void uws_app_listen(uws_app_t *app, int port, uws_listen_handler handler)
                               { handler((struct us_listen_socket_t *)listen_socket); });
 }
 
-void uws_app_close(uws_app_t *app)
-{
-    ((uWS::App *)app)->close();
-}
-
 #pragma endregion
 #pragma region uWS-Response
 

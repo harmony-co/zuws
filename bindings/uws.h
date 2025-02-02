@@ -82,9 +82,8 @@ extern "C"
 
     uws_app_t *uws_create_app();
     void uws_app_destroy(uws_app_t *app);
-    void uws_app_run(uws_app_t *);
+    void uws_app_run(uws_app_t *app);
     void uws_app_listen(uws_app_t *app, int port, uws_listen_handler handler);
-    void uws_app_close(uws_app_t *app);
 
 #pragma endregion
 #pragma region uWs-Response

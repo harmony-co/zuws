@@ -32,12 +32,7 @@ void uws_app_listen(uws_app_t *app, int port, uws_listen_handler handler)
     if (!handler)
         handler = [](auto) {};
 
-    uws_app_listen_config_t config;
-    config.port = port;
-    config.host = nullptr;
-    config.options = 0;
-
-    ((uWS::App *)app)->listen(port, [handler, config](struct us_listen_socket_t *listen_socket)
+    ((uWS::App *)app)->listen(port, [handler](struct us_listen_socket_t *listen_socket)
                               { handler((struct us_listen_socket_t *)listen_socket); });
 }
 

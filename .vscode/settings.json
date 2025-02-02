@@ -76,7 +76,16 @@
     "variant": "cpp",
     "semaphore": "cpp",
     "locale": "cpp",
-    "*.ipp": "cpp"
+    "*.ipp": "cpp",
+    "hash_map": "cpp",
+    "hash_set": "cpp",
+    "format": "cpp",
+    "shared_mutex": "cpp",
+    "span": "cpp",
+    "stdfloat": "cpp",
+    "text_encoding": "cpp",
+    "cfenv": "cpp",
+    "*.inc": "cpp"
   },
   "lldb.displayFormat": "auto",
   "lldb.showDisassembly": "auto",

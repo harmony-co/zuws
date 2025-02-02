@@ -112,6 +112,10 @@ pub fn listen(app: *const App, port: u16, handler: c.uws_listen_handler) !void {
     c.uws_app_run(app.ptr);
 }
 
+pub fn close(app: *const App) void {
+    c.uws_app_close(app.ptr);
+}
+
 pub const get = CreateMethodFn("get");
 pub const post = CreateMethodFn("post");
 pub const put = CreateMethodFn("put");

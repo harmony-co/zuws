@@ -11,10 +11,6 @@ const App = @This();
 
 pub const MethodHandler = *const fn (*Response, *Request) void;
 
-pub const uWSError = error{
-    CouldNotCreateApp,
-};
-
 ptr: *c.uws_app_s,
 
 pub const Method = enum {
@@ -85,10 +81,10 @@ pub const Group = struct {
     }
 };
 
-pub fn init() uWSError!App {
+pub fn init() !App {
     const app = c.uws_create_app();
     if (app) |ptr| return .{ .ptr = ptr };
-    return uWSError.CouldNotCreateApp;
+    return error.CouldNotCreateApp;
 }
 
 pub fn deinit(app: *const App) void {

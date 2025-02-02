@@ -138,61 +138,54 @@ pub const WebSocketBehavior = struct {
 };
 
 fn upgradeWrapper(ptr: ?*anyopaque, rawRes: ?*c.uws_res_s, rawReq: ?*c.uws_req_t, context: ?*c.uws_socket_context_t) callconv(.C) void {
-    if (ptr) |p| {
-        const handler_ptr: *const fn (*Response, *Request) void = @ptrCast(@alignCast(p));
-        var res = Response{ .ptr = rawRes orelse return };
-        const req = Request{ .ptr = rawReq orelse return };
-        handler_ptr(&res, @constCast(&req));
-        res.upgrade(&req, context);
-    }
+    const handler_ptr: *const fn (*Response, *Request) void = @ptrCast(@alignCast(ptr));
+    var res = Response{ .ptr = rawRes orelse return };
+    var req = Request{ .ptr = rawReq orelse return };
+    handler_ptr(&res, &req);
+    res.upgrade(&req, context);
 }
 
 fn openWrapper(ptr: ?*anyopaque, rawWs: ?*c.uws_websocket_t) callconv(.C) void {
-    if (ptr) |p| {
-        const handler_ptr: *const fn (ws: *WebSocket) void = @ptrCast(@alignCast(p));
-        var w_s = WebSocket{ .ptr = rawWs orelse return };
-        handler_ptr(&w_s);
-    }
+    const handler_ptr: *const fn (ws: *WebSocket) void = @ptrCast(@alignCast(ptr));
+    var w_s = WebSocket{ .ptr = rawWs orelse return };
+    handler_ptr(&w_s);
 }
 
 fn drainWrapper(ptr: ?*anyopaque, rawWs: ?*c.uws_websocket_t) callconv(.C) void {
-    if (ptr) |p| {
-        const handler_ptr: *const fn (ws: *WebSocket) void = @ptrCast(@alignCast(p));
-        var w_s = WebSocket{ .ptr = rawWs orelse return };
-        handler_ptr(&w_s);
-    }
+    const handler_ptr: *const fn (ws: *WebSocket) void = @ptrCast(@alignCast(ptr));
+    var w_s = WebSocket{ .ptr = rawWs orelse return };
+    handler_ptr(&w_s);
 }
 
 fn messageWrapper(ptr: ?*anyopaque, rawWs: ?*c.uws_websocket_t, message: [*c]const u8, length: usize, opcode: c.uws_opcode_t) callconv(.C) void {
-    if (ptr) |p| {
-        const handler_ptr: *const fn (ws: *WebSocket, message: []const u8, opcode: WebSocket.Opcode) void = @ptrCast(@alignCast(p));
-        var w_s = WebSocket{ .ptr = rawWs orelse return };
-        handler_ptr(&w_s, message[0..length], @enumFromInt(opcode));
-    }
+    const handler_ptr: *const fn (ws: *WebSocket, message: []const u8, opcode: WebSocket.Opcode) void = @ptrCast(@alignCast(ptr));
+    var w_s = WebSocket{ .ptr = rawWs orelse return };
+    handler_ptr(&w_s, message[0..length], @enumFromInt(opcode));
 }
 
 fn pingWrapper(ptr: ?*anyopaque, rawWs: ?*c.uws_websocket_t, message: [*c]const u8, length: usize) callconv(.C) void {
-    if (ptr) |p| {
-        const handler_ptr: *const fn (ws: *WebSocket, message: []const u8) void = @ptrCast(@alignCast(p));
-        var w_s = WebSocket{ .ptr = rawWs orelse return };
-        handler_ptr(&w_s, message[0..length]);
-    }
+    const handler_ptr: *const fn (ws: *WebSocket, message: []const u8) void = @ptrCast(@alignCast(ptr));
+    var w_s = WebSocket{ .ptr = rawWs orelse return };
+    handler_ptr(&w_s, message[0..length]);
 }
 
 fn closeWrapper(ptr: ?*anyopaque, rawWs: ?*c.uws_websocket_t, code: c_int, message: [*c]const u8, length: usize) callconv(.C) void {
-    if (ptr) |p| {
-        const handler_ptr: *const fn (ws: *WebSocket, code: i32, message: []const u8) void = @ptrCast(@alignCast(p));
-        var w_s = WebSocket{ .ptr = rawWs orelse return };
-        handler_ptr(&w_s, code, message[0..length]);
-    }
+    const handler_ptr: *const fn (ws: *WebSocket, code: i32, message: []const u8) void = @ptrCast(@alignCast(ptr));
+    var w_s = WebSocket{ .ptr = rawWs orelse return };
+    handler_ptr(&w_s, code, message[0..length]);
 }
 
-fn subscriptionWrapper(ptr: ?*anyopaque, rawWs: ?*c.uws_websocket_t, topic_name: [*c]const u8, topic_name_length: usize, new_number_of_subscriber: c_int, old_number_of_subscriber: c_int) callconv(.C) void {
-    if (ptr) |p| {
-        const handler_ptr: *const fn (ws: *WebSocket, topic: []const u8, new_number_of_subscriber: i32, old_number_of_subscriber: i32) void = @ptrCast(@alignCast(p));
-        var w_s = WebSocket{ .ptr = rawWs orelse return };
-        handler_ptr(&w_s, topic_name[0..topic_name_length], new_number_of_subscriber, old_number_of_subscriber);
-    }
+fn subscriptionWrapper(
+    ptr: ?*anyopaque,
+    rawWs: ?*c.uws_websocket_t,
+    topic_name: [*c]const u8,
+    topic_name_length: usize,
+    new_number_of_subscriber: c_int,
+    old_number_of_subscriber: c_int,
+) callconv(.C) void {
+    const handler_ptr: *const fn (ws: *WebSocket, topic: []const u8, new_number_of_subscriber: i32, old_number_of_subscriber: i32) void = @ptrCast(@alignCast(ptr));
+    var w_s = WebSocket{ .ptr = rawWs orelse return };
+    handler_ptr(&w_s, topic_name[0..topic_name_length], new_number_of_subscriber, old_number_of_subscriber);
 }
 
 pub fn ws(app: *const App, pattern: [:0]const u8, behavior: WebSocketBehavior) *const App {
@@ -200,7 +193,7 @@ pub fn ws(app: *const App, pattern: [:0]const u8, behavior: WebSocketBehavior) *
         info("Registering WebSocket route: {s}", .{pattern});
     }
 
-    const b: c.uws_socket_behavior_t = .{
+    var b: c.uws_socket_behavior_t = .{
         .compression = @intFromEnum(behavior.compression),
         .maxPayloadLength = behavior.maxPayloadLength,
         .idleTimeout = behavior.idleTimeout,
@@ -209,17 +202,17 @@ pub fn ws(app: *const App, pattern: [:0]const u8, behavior: WebSocketBehavior) *
         .resetIdleTimeoutOnSend = behavior.resetIdleTimeoutOnSend,
         .sendPingsAutomatically = behavior.sendPingsAutomatically,
         .maxLifetime = behavior.maxLifetime,
-
-        .upgrade = .{ .handler = upgradeWrapper, .ptr = @constCast(behavior.upgrade) },
-        .open = .{ .handler = openWrapper, .ptr = @constCast(behavior.open) },
-        .message = .{ .handler = messageWrapper, .ptr = @constCast(behavior.message) },
-        .dropped = .{ .handler = messageWrapper, .ptr = @constCast(behavior.dropped) },
-        .drain = .{ .handler = drainWrapper, .ptr = @constCast(behavior.drain) },
-        .ping = .{ .handler = pingWrapper, .ptr = @constCast(behavior.ping) },
-        .pong = .{ .handler = pingWrapper, .ptr = @constCast(behavior.pong) },
-        .close = .{ .handler = closeWrapper, .ptr = @constCast(behavior.close) },
-        .subscription = .{ .handler = subscriptionWrapper, .ptr = @constCast(behavior.subscription) },
     };
+
+    if (behavior.upgrade) |f| b.upgrade = .{ .handler = upgradeWrapper, .ptr = @constCast(f) };
+    if (behavior.open) |f| b.open = .{ .handler = openWrapper, .ptr = @constCast(f) };
+    if (behavior.message) |f| b.message = .{ .handler = messageWrapper, .ptr = @constCast(f) };
+    if (behavior.dropped) |f| b.dropped = .{ .handler = messageWrapper, .ptr = @constCast(f) };
+    if (behavior.drain) |f| b.drain = .{ .handler = drainWrapper, .ptr = @constCast(f) };
+    if (behavior.ping) |f| b.ping = .{ .handler = pingWrapper, .ptr = @constCast(f) };
+    if (behavior.pong) |f| b.pong = .{ .handler = pingWrapper, .ptr = @constCast(f) };
+    if (behavior.close) |f| b.close = .{ .handler = closeWrapper, .ptr = @constCast(f) };
+    if (behavior.subscription) |f| b.subscription = .{ .handler = subscriptionWrapper, .ptr = @constCast(f) };
 
     c.uws_ws(app.ptr, pattern, b);
     return app;

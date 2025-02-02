@@ -19,16 +19,17 @@ ptr: *c.uws_app_s,
 
 // TODO: Discuss if maybe this should be UPPER_CASE
 pub const Method = enum {
-    Get,
-    Post,
-    Put,
-    Options,
-    Del,
-    Patch,
-    Head,
-    Connect,
-    Trace,
-    Any,
+    GET,
+    POST,
+    PUT,
+    OPTIONS,
+    DELETE,
+    PATCH,
+    HEAD,
+    CONNECT,
+    TRACE,
+    /// Never possible to receive it, purely for internal purposes
+    ANY,
 };
 
 pub const Group = struct {
@@ -41,16 +42,16 @@ pub const Group = struct {
         handler: MethodHandler,
     };
 
-    pub const get = CreateGroupFn(.Get);
-    pub const post = CreateGroupFn(.Post);
-    pub const put = CreateGroupFn(.Put);
-    pub const options = CreateGroupFn(.Options);
-    pub const del = CreateGroupFn(.Del);
-    pub const patch = CreateGroupFn(.Patch);
-    pub const head = CreateGroupFn(.Head);
-    pub const connect = CreateGroupFn(.Connect);
-    pub const trace = CreateGroupFn(.Trace);
-    pub const any = CreateGroupFn(.Any);
+    pub const get = CreateGroupFn(.GET);
+    pub const post = CreateGroupFn(.POST);
+    pub const put = CreateGroupFn(.PUT);
+    pub const options = CreateGroupFn(.OPTIONS);
+    pub const del = CreateGroupFn(.DELETE);
+    pub const patch = CreateGroupFn(.PATCH);
+    pub const head = CreateGroupFn(.HEAD);
+    pub const connect = CreateGroupFn(.CONNECT);
+    pub const trace = CreateGroupFn(.TRACE);
+    pub const any = CreateGroupFn(.ANY);
 
     pub fn group(comptime self: *Group, grp: Group) *Group {
         comptime {
@@ -101,16 +102,16 @@ pub const any = CreateMethodFn("any");
 pub fn group(app: *const App, comptime g: Group) *const App {
     inline for (g.list) |item| {
         switch (item.method) {
-            .Get => _ = app.get(item.pattern, item.handler),
-            .Post => _ = app.post(item.pattern, item.handler),
-            .Put => _ = app.put(item.pattern, item.handler),
-            .Options => _ = app.options(item.pattern, item.handler),
-            .Del => _ = app.del(item.pattern, item.handler),
-            .Patch => _ = app.patch(item.pattern, item.handler),
-            .Head => _ = app.head(item.pattern, item.handler),
-            .Connect => _ = app.connect(item.pattern, item.handler),
-            .Trace => _ = app.trace(item.pattern, item.handler),
-            .Any => _ = app.any(item.pattern, item.handler),
+            .GET => _ = app.get(item.pattern, item.handler),
+            .POST => _ = app.post(item.pattern, item.handler),
+            .PUT => _ = app.put(item.pattern, item.handler),
+            .OPTIONS => _ = app.options(item.pattern, item.handler),
+            .DELETE => _ = app.del(item.pattern, item.handler),
+            .PATCH => _ = app.patch(item.pattern, item.handler),
+            .HEAD => _ = app.head(item.pattern, item.handler),
+            .CONNECT => _ = app.connect(item.pattern, item.handler),
+            .TRACE => _ = app.trace(item.pattern, item.handler),
+            .ANY => _ = app.any(item.pattern, item.handler),
         }
     }
     return app;

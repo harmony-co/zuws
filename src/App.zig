@@ -116,15 +116,16 @@ pub fn group(app: *const App, comptime g: Group) *const App {
     return app;
 }
 
+// https://github.com/harmony-co/uWebSocketsZig/blob/main/uWebSockets/src/App.h#L234
 pub const WebSocketBehavior = struct {
     compression: WebSocket.CompressOptions = .DISABLED,
-    maxPayloadLength: u32 = 0,
+    maxPayloadLength: u32 = 16 * 1024,
     /// In seconds
-    idleTimeout: u16 = 0,
-    maxBackpressure: u32 = 0,
+    idleTimeout: u16 = 120,
+    maxBackpressure: u32 = 64 * 1024,
     closeOnBackpressureLimit: bool = false,
     resetIdleTimeoutOnSend: bool = false,
-    sendPingsAutomatically: bool = false,
+    sendPingsAutomatically: bool = true,
     maxLifetime: u16 = 0,
     upgrade: ?*const fn (res: *Response, req: *Request) void = null,
     open: ?*const fn (ws: *WebSocket) void = null,

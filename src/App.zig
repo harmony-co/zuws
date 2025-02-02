@@ -256,7 +256,7 @@ fn subscriptionWrapper(
 }
 
 /// **Args**:
-/// * `method` - A ***lowercase*** http method; refers to `bindings/uws.h:69:9`
+/// * `method` - A ***lowercase*** http method; refers to `bindings/uws.h:66:9`
 fn CreateMethodFn(comptime method: []const u8) fn (app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
     var temp_up: [8]u8 = undefined;
     const upper_method = std.ascii.upperString(&temp_up, method);

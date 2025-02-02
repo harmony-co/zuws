@@ -55,15 +55,25 @@ pub const Group = struct {
     pub const trace = CreateGroupFn(.TRACE);
     pub const any = CreateGroupFn(.ANY);
 
-    // Maybe this should be renamed to `merge`
-    // Or maybe we could have a different merge function that
-    // actually merges the routes without taking into account the base path
     pub fn group(comptime self: *Group, grp: Group) *Group {
         comptime {
             for (grp.list) |item| {
                 self.list = self.list ++ .{ListType{
                     .method = item.method,
-                    .pattern = self.base_path ++ item.pattern,
+                    .pattern = grp.base_path ++ item.pattern,
+                    .handler = item.handler,
+                }};
+            }
+            return self;
+        }
+    }
+
+    pub fn merge(comptime self: *Group, grp: Group) *Group {
+        comptime {
+            for (grp.list) |item| {
+                self.list = self.list ++ .{ListType{
+                    .method = item.method,
+                    .pattern = item.pattern,
                     .handler = item.handler,
                 }};
             }
@@ -74,7 +84,7 @@ pub const Group = struct {
     fn CreateGroupFn(comptime method: App.Method) fn (comptime self: *App.Group, comptime pattern: [:0]const u8, handler: MethodHandler) *App.Group {
         return struct {
             fn temp(comptime self: *App.Group, comptime pattern: [:0]const u8, handler: MethodHandler) *App.Group {
-                self.list = self.list ++ .{App.Group.ListType{ .method = method, .pattern = self.base_path ++ pattern, .handler = handler }};
+                self.list = self.list ++ .{App.Group.ListType{ .method = method, .pattern = pattern, .handler = handler }};
                 return self;
             }
         }.temp;
@@ -116,16 +126,16 @@ pub const any = CreateMethodFn("any");
 pub fn group(app: *const App, comptime g: Group) *const App {
     inline for (g.list) |item| {
         switch (item.method) {
-            .GET => _ = app.get(item.pattern, item.handler),
-            .POST => _ = app.post(item.pattern, item.handler),
-            .PUT => _ = app.put(item.pattern, item.handler),
-            .OPTIONS => _ = app.options(item.pattern, item.handler),
-            .DELETE => _ = app.del(item.pattern, item.handler),
-            .PATCH => _ = app.patch(item.pattern, item.handler),
-            .HEAD => _ = app.head(item.pattern, item.handler),
-            .CONNECT => _ = app.connect(item.pattern, item.handler),
-            .TRACE => _ = app.trace(item.pattern, item.handler),
-            .ANY => _ = app.any(item.pattern, item.handler),
+            .GET => _ = app.get(g.base_path ++ item.pattern, item.handler),
+            .POST => _ = app.post(g.base_path ++ item.pattern, item.handler),
+            .PUT => _ = app.put(g.base_path ++ item.pattern, item.handler),
+            .OPTIONS => _ = app.options(g.base_path ++ item.pattern, item.handler),
+            .DELETE => _ = app.del(g.base_path ++ item.pattern, item.handler),
+            .PATCH => _ = app.patch(g.base_path ++ item.pattern, item.handler),
+            .HEAD => _ = app.head(g.base_path ++ item.pattern, item.handler),
+            .CONNECT => _ = app.connect(g.base_path ++ item.pattern, item.handler),
+            .TRACE => _ = app.trace(g.base_path ++ item.pattern, item.handler),
+            .ANY => _ = app.any(g.base_path ++ item.pattern, item.handler),
         }
     }
     return app;

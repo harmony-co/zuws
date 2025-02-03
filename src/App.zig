@@ -175,11 +175,14 @@ pub fn ws(app: *const App, pattern: [:0]const u8, behavior: WebSocketBehavior) *
     return app;
 }
 
-fn handlerWrapper(ptr: ?*anyopaque, rawRes: ?*c.uws_res_s, rawReq: ?*c.uws_req_s) callconv(.C) void {
-    const handler_ptr: MethodHandler = @ptrCast(@alignCast(ptr));
-    var res = Response{ .ptr = rawRes orelse return };
-    var req = Request{ .ptr = rawReq orelse return };
-    handler_ptr(&res, &req);
+fn handlerWrapper(handler: MethodHandler) fn (rawRes: ?*c.uws_res_s, rawReq: ?*c.uws_req_s) callconv(.C) void {
+    return struct {
+        fn handlerWrapper(rawRes: ?*c.uws_res_s, rawReq: ?*c.uws_req_s) callconv(.C) void {
+            var res = Response{ .ptr = rawRes orelse return };
+            var req = Request{ .ptr = rawReq orelse return };
+            handler(&res, &req);
+        }
+    }.handlerWrapper;
 }
 
 // https://github.com/uNetworking/uWebSockets/blob/b9b59b2b164489f3788223fec5821f77f7962d43/src/App.h#L234-L259
@@ -257,17 +260,17 @@ fn subscriptionWrapper(
 
 /// **Args**:
 /// * `method` - A ***lowercase*** http method; refers to `bindings/uws.h:66:9`
-fn CreateMethodFn(comptime method: []const u8) fn (app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
+fn CreateMethodFn(comptime method: []const u8) fn (app: *const App, pattern: [:0]const u8, comptime handler: MethodHandler) *const App {
     var temp_up: [8]u8 = undefined;
     const upper_method = std.ascii.upperString(&temp_up, method);
     const log_str = std.fmt.comptimePrint("Registering {s} route: ", .{upper_method}) ++ "{s}";
 
     return struct {
-        fn temp(app: *const App, pattern: [:0]const u8, handler: MethodHandler) *const App {
+        fn temp(app: *const App, pattern: [:0]const u8, comptime handler: MethodHandler) *const App {
             if (config.debug_logs) {
                 info(log_str, .{pattern});
             }
-            @field(c, std.fmt.comptimePrint("uws_app_{s}", .{method}))(app.ptr, pattern, handlerWrapper, @constCast(handler));
+            @field(c, std.fmt.comptimePrint("uws_app_{s}", .{method}))(app.ptr, pattern, handlerWrapper(handler));
             return app;
         }
     }.temp;

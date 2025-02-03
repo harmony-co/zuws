@@ -4,10 +4,10 @@
 
 #pragma region uWS-app
 
-#define METHOD(name)                                                                                                                  \
-    void uws_app_##name(uws_app_t *app, const char *pattern, uws_method_handler handler, void *ptr)                                   \
-    {                                                                                                                                 \
-        ((uWS::App *)app)->name(pattern, [handler, ptr](auto *res, auto *req) { handler(ptr, (uws_res_t *)res, (uws_req_t *)req); }); \
+#define METHOD(name)                                                                                                             \
+    void uws_app_##name(uws_app_t *app, const char *pattern, uws_method_handler handler)                                         \
+    {                                                                                                                            \
+        ((uWS::App *)app)->name(pattern, [handler](auto *res, auto *req) { handler((uws_res_t *)res, (uws_req_t *)req); }); \
     };
 HTTP_METHODS
 #undef METHOD

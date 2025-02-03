@@ -160,24 +160,15 @@ extern "C"
         DROPPED
     } uws_sendstatus_t;
 
-#define WEBSOCKET_HANDLERS()                                                                         \
-    HANDLE(upgrade, (uws_res_t * response, uws_req_t * request, uws_socket_context_t * context))     \
-    HANDLE(open, (uws_websocket_t * ws))                                                             \
-    HANDLE(message, (uws_websocket_t * ws, const char *message, size_t length, uws_opcode_t opcode)) \
-    HANDLE(dropped, (uws_websocket_t * ws, const char *message, size_t length, uws_opcode_t opcode)) \
-    HANDLE(drain, (uws_websocket_t * ws))                                                            \
-    HANDLE(ping, (uws_websocket_t * ws, const char *message, size_t length))                         \
-    HANDLE(pong, (uws_websocket_t * ws, const char *message, size_t length))                         \
-    HANDLE(close, (uws_websocket_t * ws, int code, const char *message, size_t length))              \
-    HANDLE(subscription, (uws_websocket_t * ws, const char *topic_name, size_t topic_name_length, int new_number_of_subscriber, int old_number_of_subscriber))
-
-#define HANDLE(name, args) \
-    typedef void(*uws_websocket_##name) args;
-    WEBSOCKET_HANDLERS()
-#undef HANDLE
-
-#define HANDLE(name, args) \
-    uws_websocket_##name name;
+    typedef void (*uws_websocket_upgrade)(uws_res_t *response, uws_req_t *request, uws_socket_context_t *context);
+    typedef void (*uws_websocket_open)(uws_websocket_t *ws);
+    typedef void (*uws_websocket_message)(uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode);
+    typedef void (*uws_websocket_dropped)(uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode);
+    typedef void (*uws_websocket_drain)(uws_websocket_t *ws);
+    typedef void (*uws_websocket_ping)(uws_websocket_t *ws, const char *message, size_t length);
+    typedef void (*uws_websocket_pong)(uws_websocket_t *ws, const char *message, size_t length);
+    typedef void (*uws_websocket_close)(uws_websocket_t *ws, int code, const char *message, size_t length);
+    typedef void (*uws_websocket_subscription)(uws_websocket_t *ws, const char *topic_name, size_t topic_name_length, int new_number_of_subscriber, int old_number_of_subscriber);
 
     typedef struct
     {
@@ -189,9 +180,16 @@ extern "C"
         bool resetIdleTimeoutOnSend;
         bool sendPingsAutomatically;
         unsigned short maxLifetime;
-        WEBSOCKET_HANDLERS()
+        uws_websocket_upgrade upgrade;
+        uws_websocket_open open;
+        uws_websocket_message message;
+        uws_websocket_dropped dropped;
+        uws_websocket_drain drain;
+        uws_websocket_ping ping;
+        uws_websocket_pong pong;
+        uws_websocket_close close;
+        uws_websocket_subscription subscription;
     } uws_socket_behavior_t;
-#undef HANDLE
 
     void uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior);
     void uws_ws_close(uws_websocket_t *ws);

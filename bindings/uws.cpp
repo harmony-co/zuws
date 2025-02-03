@@ -4,9 +4,9 @@
 
 #pragma region uWS-app
 
-#define METHOD(name)                                                                                                             \
-    void uws_app_##name(uws_app_t *app, const char *pattern, uws_method_handler handler)                                         \
-    {                                                                                                                            \
+#define METHOD(name)                                                                                                        \
+    void uws_app_##name(uws_app_t *app, const char *pattern, uws_method_handler handler)                                    \
+    {                                                                                                                       \
         ((uWS::App *)app)->name(pattern, [handler](auto *res, auto *req) { handler((uws_res_t *)res, (uws_req_t *)req); }); \
     };
 HTTP_METHODS
@@ -247,12 +247,11 @@ size_t uws_req_get_parameter_index(uws_req_t *res, unsigned short index, const c
 #pragma endregion
 #pragma region uWS-Websockets
 
-#define WEBSOCKET_HANDLER(field, lambda_args, lambda_body)                \
-    if (behavior.field.handler)                                           \
-    {                                                                     \
-        auto handler = behavior.field.handler;                            \
-        auto ptr = behavior.field.ptr;                                    \
-        generic_handler.field = [ handler, ptr ] lambda_args lambda_body; \
+#define WEBSOCKET_HANDLER(field, lambda_args, lambda_body)         \
+    if (behavior.field)                                            \
+    {                                                              \
+        auto handler = behavior.field;                             \
+        generic_handler.field = [handler] lambda_args lambda_body; \
     }
 
 void uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior)
@@ -269,39 +268,39 @@ void uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior)
     };
 
     WEBSOCKET_HANDLER(upgrade, (auto *res, auto *req, auto *context), {
-        handler(ptr, (uws_res_t *)res, (uws_req_t *)req, (uws_socket_context_t *)context);
+        handler((uws_res_t *)res, (uws_req_t *)req, (uws_socket_context_t *)context);
     });
 
     WEBSOCKET_HANDLER(open, (auto *ws), {
-        handler(ptr, (uws_websocket_t *)ws);
+        handler((uws_websocket_t *)ws);
     });
 
     WEBSOCKET_HANDLER(message, (auto *ws, auto message, auto opcode), {
-        handler(ptr, (uws_websocket_t *)ws, message.data(), message.length(), (uws_opcode_t)opcode);
+        handler((uws_websocket_t *)ws, message.data(), message.length(), (uws_opcode_t)opcode);
     });
 
     WEBSOCKET_HANDLER(dropped, (auto *ws, auto message, auto opcode), {
-        handler(ptr, (uws_websocket_t *)ws, message.data(), message.length(), (uws_opcode_t)opcode);
+        handler((uws_websocket_t *)ws, message.data(), message.length(), (uws_opcode_t)opcode);
     });
 
     WEBSOCKET_HANDLER(drain, (auto *ws), {
-        handler(ptr, (uws_websocket_t *)ws);
+        handler((uws_websocket_t *)ws);
     });
 
     WEBSOCKET_HANDLER(ping, (auto *ws, auto message), {
-        handler(ptr, (uws_websocket_t *)ws, message.data(), message.length());
+        handler((uws_websocket_t *)ws, message.data(), message.length());
     });
 
     WEBSOCKET_HANDLER(pong, (auto *ws, auto message), {
-        handler(ptr, (uws_websocket_t *)ws, message.data(), message.length());
+        handler((uws_websocket_t *)ws, message.data(), message.length());
     });
 
     WEBSOCKET_HANDLER(close, (auto *ws, int code, auto message), {
-        handler(ptr, (uws_websocket_t *)ws, code, message.data(), message.length());
+        handler((uws_websocket_t *)ws, code, message.data(), message.length());
     });
 
     WEBSOCKET_HANDLER(subscription, (auto *ws, auto topic, int subscribers, int old_subscribers), {
-        handler(ptr, (uws_websocket_t *)ws, topic.data(), topic.length(), subscribers, old_subscribers);
+        handler((uws_websocket_t *)ws, topic.data(), topic.length(), subscribers, old_subscribers);
     });
 
     uWS::App *uwsApp = (uWS::App *)app;

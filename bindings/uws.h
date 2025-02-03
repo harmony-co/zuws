@@ -160,28 +160,24 @@ extern "C"
         DROPPED
     } uws_sendstatus_t;
 
-#define WEBSOCKET_HANDLERS(...)                                                                                  \
-    HANDLE(upgrade, (__VA_ARGS__ uws_res_t * response, uws_req_t * request, uws_socket_context_t * context))     \
-    HANDLE(open, (__VA_ARGS__ uws_websocket_t * ws))                                                             \
-    HANDLE(message, (__VA_ARGS__ uws_websocket_t * ws, const char *message, size_t length, uws_opcode_t opcode)) \
-    HANDLE(dropped, (__VA_ARGS__ uws_websocket_t * ws, const char *message, size_t length, uws_opcode_t opcode)) \
-    HANDLE(drain, (__VA_ARGS__ uws_websocket_t * ws))                                                            \
-    HANDLE(ping, (__VA_ARGS__ uws_websocket_t * ws, const char *message, size_t length))                         \
-    HANDLE(pong, (__VA_ARGS__ uws_websocket_t * ws, const char *message, size_t length))                         \
-    HANDLE(close, (__VA_ARGS__ uws_websocket_t * ws, int code, const char *message, size_t length))              \
-    HANDLE(subscription, (__VA_ARGS__ uws_websocket_t * ws, const char *topic_name, size_t topic_name_length, int new_number_of_subscriber, int old_number_of_subscriber))
+#define WEBSOCKET_HANDLERS()                                                                         \
+    HANDLE(upgrade, (uws_res_t * response, uws_req_t * request, uws_socket_context_t * context))     \
+    HANDLE(open, (uws_websocket_t * ws))                                                             \
+    HANDLE(message, (uws_websocket_t * ws, const char *message, size_t length, uws_opcode_t opcode)) \
+    HANDLE(dropped, (uws_websocket_t * ws, const char *message, size_t length, uws_opcode_t opcode)) \
+    HANDLE(drain, (uws_websocket_t * ws))                                                            \
+    HANDLE(ping, (uws_websocket_t * ws, const char *message, size_t length))                         \
+    HANDLE(pong, (uws_websocket_t * ws, const char *message, size_t length))                         \
+    HANDLE(close, (uws_websocket_t * ws, int code, const char *message, size_t length))              \
+    HANDLE(subscription, (uws_websocket_t * ws, const char *topic_name, size_t topic_name_length, int new_number_of_subscriber, int old_number_of_subscriber))
 
 #define HANDLE(name, args) \
     typedef void(*uws_websocket_##name) args;
-    WEBSOCKET_HANDLERS(void *ptr, )
+    WEBSOCKET_HANDLERS()
 #undef HANDLE
 
-#define HANDLE(name, args)            \
-    struct                            \
-    {                                 \
-        uws_websocket_##name handler; \
-        void *ptr;                    \
-    } name;
+#define HANDLE(name, args) \
+    uws_websocket_##name name;
 
     typedef struct
     {

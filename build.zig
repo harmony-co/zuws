@@ -6,6 +6,7 @@ pub fn build(b: *std.Build) !void {
 
     const config_options = b.addOptions();
     const debug_logs = b.option(bool, "debug_logs", "Whether to enable debug logs for route creation.") orelse (optimize == .Debug);
+    const ssl = b.option(bool, "ssl", "Whether to enable SSL.") orelse false;
 
     config_options.addOption(bool, "debug_logs", debug_logs);
 
@@ -30,6 +31,7 @@ pub fn build(b: *std.Build) !void {
             "socket.c",
             "udp.c",
             "crypto/sni_tree.cpp",
+            "crypto/openssl.c",
             "eventing/epoll_kqueue.c",
             "eventing/gcd.c",
             "eventing/libuv.c",
@@ -37,8 +39,13 @@ pub fn build(b: *std.Build) !void {
             "io_uring/io_loop.c",
             "io_uring/io_socket.c",
         },
-        .flags = &.{"-DLIBUS_NO_SSL"},
+        .flags = if (ssl) &.{"-DLIBUS_USE_OPENSSL"} else &.{"-DLIBUS_NO_SSL"},
     });
+    if (ssl) {
+        uSockets.linkLibCpp();
+        uSockets.linkSystemLibrary("ssl");
+        uSockets.linkSystemLibrary("crypto");
+    }
 
     const uWebSockets = b.addLibrary(.{
         .name = "uWebSockets",

@@ -2,9 +2,11 @@ const std = @import("std");
 const uws = @import("uws");
 
 fn handler(rawRes: ?*uws.uws_ssl_res_s, _: ?*uws.uws_req_s) callconv(.c) void {
-    uws.uws_ssl_res_end(rawRes.?, "Hello World!\n", 13, false);
+    const str = "Hello World!\n";
+    uws.uws_ssl_res_end(rawRes.?, str, str.len, false);
 }
 
+/// `uws_create_ssl_app({options})` compiled without `-Dssl` is the same as `uws_create_app()`
 pub fn main() !void {
     const app = uws.uws_create_ssl_app(.{
         .key_file_name = "misc/key.pem",

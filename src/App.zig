@@ -264,7 +264,7 @@ fn subscriptionWrapper(handler: *const fn (ws: *WebSocket, topic: [:0]const u8, 
 }
 
 /// **Args**:
-/// * `method` - A ***lowercase*** http method; refers to `bindings/uws.h:70:9`
+/// * `method` - A ***lowercase*** http method; refers to `bindings/uws.h` -- `HTTP_METHODS`
 fn CreateMethodFn(comptime method: [:0]const u8, comptime useWrapper: bool) type {
     var temp_up: [8]u8 = undefined;
     const upper_method = std.ascii.upperString(&temp_up, method);

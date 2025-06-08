@@ -10,8 +10,9 @@
 extern "C"
 {
 #endif
-    struct uws_req_s;
-    typedef struct uws_req_s uws_req_t;
+
+    struct uws_websocket_s;
+    typedef struct uws_websocket_s uws_websocket_t;
     struct uws_socket_context_s;
     typedef struct uws_socket_context_s uws_socket_context_t;
 
@@ -56,11 +57,14 @@ extern "C"
 
 #pragma region uWS-App
 
+    struct uws_app_s;
+    typedef struct uws_app_s uws_app_t;
+    struct uws_res_s;
+    typedef struct uws_res_s uws_res_t;
+    struct uws_req_s;
+    typedef struct uws_req_s uws_req_t;
+    typedef void (*uws_method_handler)(uws_res_t *response, uws_req_t *request);
     typedef void (*uws_listen_handler)(struct us_listen_socket_t *listen_socket);
-
-#define PROTOCOLS        \
-    APP(ssl_, SSL, true) \
-    APP(, , false)
 
 #define HTTP_METHODS \
     METHOD(get)      \
@@ -74,26 +78,16 @@ extern "C"
     METHOD(trace)    \
     METHOD(any)
 
-#define APP(prefix, _, __)                                                                             \
-    struct uws_##prefix##res_s;                                                                        \
-    typedef struct uws_##prefix##res_s uws_##prefix##res_t;                                            \
-    typedef void (*uws_##prefix##method_handler)(uws_##prefix##res_t * response, uws_req_t * request); \
-                                                                                                       \
-    struct uws_##prefix##app_s;                                                                        \
-    typedef struct uws_##prefix##app_s uws_##prefix##app_t;                                            \
-    uws_##prefix##app_t *uws_create_##prefix##app(struct us_socket_context_options_t options);         \
-    void uws_##prefix##app_destroy(uws_##prefix##app_t *app);                                          \
-    void uws_##prefix##app_run(uws_##prefix##app_t *app);                                              \
-    void uws_##prefix##app_listen(uws_##prefix##app_t *app, int port, uws_listen_handler handler);     \
-    void uws_##prefix##app_close(uws_##prefix##app_t *app);
-    PROTOCOLS
-#undef APP
-
-#define METHOD(name)                                                                      \
-    void uws_app_##name(uws_app_t *app, const char *pattern, uws_method_handler handler); \
-    void uws_ssl_app_##name(uws_ssl_app_t *app, const char *pattern, uws_ssl_method_handler handler);
+#define METHOD(name) \
+    void uws_app_##name(uws_app_t *app, const char *pattern, uws_method_handler handler);
     HTTP_METHODS
 #undef METHOD
+
+    uws_app_t *uws_create_app(struct us_socket_context_options_t options);
+    void uws_app_destroy(uws_app_t *app);
+    void uws_app_run(uws_app_t *app);
+    void uws_app_listen(uws_app_t *app, int port, uws_listen_handler handler);
+    void uws_app_close(uws_app_t *app);
 
 #pragma endregion
 #pragma region uWs-Response
@@ -104,35 +98,32 @@ extern "C"
         bool has_responded;
     } uws_try_end_result_t;
 
-#define APP(prefix, _, __)                                                                                                                                                                                                                                                                                                        \
-    typedef bool (*uws_##prefix##res_on_writable_handler)(uws_##prefix##res_t * res, uintmax_t);                                                                                                                                                                                                                                  \
-    typedef bool (*uws_##prefix##res_on_aborted_handler)(uws_##prefix##res_t * res);                                                                                                                                                                                                                                              \
-    typedef void (*uws_##prefix##res_on_data_handler)(uws_##prefix##res_t * res, const char *chunk, size_t chunk_length, bool is_end);                                                                                                                                                                                            \
-                                                                                                                                                                                                                                                                                                                                  \
-    void uws_##prefix##res_close(uws_##prefix##res_t *res);                                                                                                                                                                                                                                                                       \
-    void uws_##prefix##res_end(uws_##prefix##res_t *res, const char *data, size_t length, bool close_connection);                                                                                                                                                                                                                 \
-    void uws_##prefix##res_cork(uws_##prefix##res_t *res, void (*callback)(uws_##prefix##res_t * res));                                                                                                                                                                                                                           \
-    void uws_##prefix##res_pause(uws_##prefix##res_t *res);                                                                                                                                                                                                                                                                       \
-    void uws_##prefix##res_resume(uws_##prefix##res_t *res);                                                                                                                                                                                                                                                                      \
-    void uws_##prefix##res_write_continue(uws_##prefix##res_t *res);                                                                                                                                                                                                                                                              \
-    void uws_##prefix##res_write_status(uws_##prefix##res_t *res, const char *status, size_t length);                                                                                                                                                                                                                             \
-    void uws_##prefix##res_write_header(uws_##prefix##res_t *res, const char *key, size_t key_length, const char *value, size_t value_length);                                                                                                                                                                                    \
-    void uws_##prefix##res_write_header_int(uws_##prefix##res_t *res, const char *key, size_t key_length, uint64_t value);                                                                                                                                                                                                        \
-    void uws_##prefix##res_end_without_body(uws_##prefix##res_t *res, bool close_connection);                                                                                                                                                                                                                                     \
-    bool uws_##prefix##res_write(uws_##prefix##res_t *res, const char *data, size_t length);                                                                                                                                                                                                                                      \
-    void uws_##prefix##res_override_write_offset(uws_##prefix##res_t *res, uintmax_t offset);                                                                                                                                                                                                                                     \
-    bool uws_##prefix##res_has_responded(uws_##prefix##res_t *res);                                                                                                                                                                                                                                                               \
-    void uws_##prefix##res_on_writable(uws_##prefix##res_t *res, uws_##prefix##res_on_writable_handler handler);                                                                                                                                                                                                                  \
-    void uws_##prefix##res_on_aborted(uws_##prefix##res_t *res, uws_##prefix##res_on_aborted_handler handler);                                                                                                                                                                                                                    \
-    void uws_##prefix##res_on_data(uws_##prefix##res_t *res, uws_##prefix##res_on_data_handler handler);                                                                                                                                                                                                                          \
-    void uws_##prefix##res_upgrade(uws_##prefix##res_t *res, void *data, const char *sec_web_socket_key, size_t sec_web_socket_key_length, const char *sec_web_socket_protocol, size_t sec_web_socket_protocol_length, const char *sec_web_socket_extensions, size_t sec_web_socket_extensions_length, uws_socket_context_t *ws); \
-                                                                                                                                                                                                                                                                                                                                  \
-    uws_try_end_result_t uws_##prefix##res_try_end(uws_##prefix##res_t *res, const char *data, size_t length, uintmax_t total_size, bool close_connection);                                                                                                                                                                       \
-    uintmax_t uws_##prefix##res_get_write_offset(uws_##prefix##res_t *res);                                                                                                                                                                                                                                                       \
-    size_t uws_##prefix##res_get_remote_address(uws_##prefix##res_t *res, const char **dest);                                                                                                                                                                                                                                     \
-    size_t uws_##prefix##res_get_remote_address_as_text(uws_##prefix##res_t *res, const char **dest);
-    PROTOCOLS
-#undef APP
+    typedef bool (*uws_res_on_writable_handler)(uws_res_t *res, uintmax_t);
+    typedef bool (*uws_res_on_aborted_handler)(uws_res_t *res);
+    typedef void (*uws_res_on_data_handler)(uws_res_t *res, const char *chunk, size_t chunk_length, bool is_end);
+
+    void uws_res_close(uws_res_t *res);
+    void uws_res_end(uws_res_t *res, const char *data, size_t length, bool close_connection);
+    void uws_res_cork(uws_res_t *res, void (*callback)(uws_res_t *res));
+    void uws_res_pause(uws_res_t *res);
+    void uws_res_resume(uws_res_t *res);
+    void uws_res_write_continue(uws_res_t *res);
+    void uws_res_write_status(uws_res_t *res, const char *status, size_t length);
+    void uws_res_write_header(uws_res_t *res, const char *key, size_t key_length, const char *value, size_t value_length);
+    void uws_res_write_header_int(uws_res_t *res, const char *key, size_t key_length, uint64_t value);
+    void uws_res_end_without_body(uws_res_t *res, bool close_connection);
+    bool uws_res_write(uws_res_t *res, const char *data, size_t length);
+    void uws_res_override_write_offset(uws_res_t *res, uintmax_t offset);
+    bool uws_res_has_responded(uws_res_t *res);
+    void uws_res_on_writable(uws_res_t *res, uws_res_on_writable_handler handler);
+    void uws_res_on_aborted(uws_res_t *res, uws_res_on_aborted_handler handler);
+    void uws_res_on_data(uws_res_t *res, uws_res_on_data_handler handler);
+    void uws_res_upgrade(uws_res_t *res, void *data, const char *sec_web_socket_key, size_t sec_web_socket_key_length, const char *sec_web_socket_protocol, size_t sec_web_socket_protocol_length, const char *sec_web_socket_extensions, size_t sec_web_socket_extensions_length, uws_socket_context_t *ws);
+
+    uws_try_end_result_t uws_res_try_end(uws_res_t *res, const char *data, size_t length, uintmax_t total_size, bool close_connection);
+    uintmax_t uws_res_get_write_offset(uws_res_t *res);
+    size_t uws_res_get_remote_address(uws_res_t *res, const char **dest);
+    size_t uws_res_get_remote_address_as_text(uws_res_t *res, const char **dest);
 
 #pragma endregion
 #pragma region uWS-Request
@@ -172,62 +163,56 @@ extern "C"
         DROPPED
     } uws_sendstatus_t;
 
-#define APP(prefix, _, __)                                                                                                                                                                              \
-    struct uws_##prefix##websocket_s;                                                                                                                                                                   \
-    typedef struct uws_##prefix##websocket_s uws_##prefix##websocket_t;                                                                                                                                 \
-                                                                                                                                                                                                        \
-    typedef void (*uws_##prefix##websocket_upgrade)(uws_##prefix##res_t * response, uws_req_t * request, uws_socket_context_t * context);                                                               \
-    typedef void (*uws_##prefix##websocket_open)(uws_##prefix##websocket_t * ws);                                                                                                                       \
-    typedef void (*uws_##prefix##websocket_message)(uws_##prefix##websocket_t * ws, const char *message, size_t length, uws_opcode_t opcode);                                                           \
-    typedef void (*uws_##prefix##websocket_dropped)(uws_##prefix##websocket_t * ws, const char *message, size_t length, uws_opcode_t opcode);                                                           \
-    typedef void (*uws_##prefix##websocket_drain)(uws_##prefix##websocket_t * ws);                                                                                                                      \
-    typedef void (*uws_##prefix##websocket_ping)(uws_##prefix##websocket_t * ws, const char *message, size_t length);                                                                                   \
-    typedef void (*uws_##prefix##websocket_pong)(uws_##prefix##websocket_t * ws, const char *message, size_t length);                                                                                   \
-    typedef void (*uws_##prefix##websocket_close)(uws_##prefix##websocket_t * ws, int code, const char *message, size_t length);                                                                        \
-    typedef void (*uws_##prefix##websocket_subscription)(uws_##prefix##websocket_t * ws, const char *topic_name, size_t topic_name_length, int new_number_of_subscriber, int old_number_of_subscriber); \
-                                                                                                                                                                                                        \
-    typedef struct                                                                                                                                                                                      \
-    {                                                                                                                                                                                                   \
-        uws_compress_options_t compression;                                                                                                                                                             \
-        unsigned int maxPayloadLength;                                                                                                                                                                  \
-        unsigned short idleTimeout;                                                                                                                                                                     \
-        unsigned int maxBackpressure;                                                                                                                                                                   \
-        bool closeOnBackpressureLimit;                                                                                                                                                                  \
-        bool resetIdleTimeoutOnSend;                                                                                                                                                                    \
-        bool sendPingsAutomatically;                                                                                                                                                                    \
-        unsigned short maxLifetime;                                                                                                                                                                     \
-        uws_##prefix##websocket_upgrade upgrade;                                                                                                                                                        \
-        uws_##prefix##websocket_open open;                                                                                                                                                              \
-        uws_##prefix##websocket_message message;                                                                                                                                                        \
-        uws_##prefix##websocket_dropped dropped;                                                                                                                                                        \
-        uws_##prefix##websocket_drain drain;                                                                                                                                                            \
-        uws_##prefix##websocket_ping ping;                                                                                                                                                              \
-        uws_##prefix##websocket_pong pong;                                                                                                                                                              \
-        uws_##prefix##websocket_close close;                                                                                                                                                            \
-        uws_##prefix##websocket_subscription subscription;                                                                                                                                              \
-    } uws_##prefix##socket_behavior_t;                                                                                                                                                                  \
-                                                                                                                                                                                                        \
-    void uws_##prefix##ws(uws_##prefix##app_t *app, const char *pattern, uws_##prefix##socket_behavior_t behavior);                                                                                     \
-    void uws_##prefix##ws_close(uws_##prefix##websocket_t *ws);                                                                                                                                         \
-    uws_sendstatus_t uws_##prefix##ws_send(uws_##prefix##websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode);                                                                     \
-    uws_sendstatus_t uws_##prefix##ws_send_with_options(uws_##prefix##websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode, bool compress, bool fin);                               \
-    uws_sendstatus_t uws_##prefix##ws_send_fragment(uws_##prefix##websocket_t *ws, const char *message, size_t length, bool compress);                                                                  \
-    uws_sendstatus_t uws_##prefix##ws_send_first_fragment(uws_##prefix##websocket_t *ws, const char *message, size_t length, bool compress);                                                            \
-    uws_sendstatus_t uws_##prefix##ws_send_first_fragment_with_opcode(uws_##prefix##websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode, bool compress);                           \
-    uws_sendstatus_t uws_##prefix##ws_send_last_fragment(uws_##prefix##websocket_t *ws, const char *message, size_t length, bool compress);                                                             \
-    void uws_##prefix##ws_end(uws_##prefix##websocket_t *ws, int code, const char *message, size_t length);                                                                                             \
-    void uws_##prefix##ws_cork(uws_##prefix##websocket_t *ws, void (*handler)());                                                                                                                       \
-    bool uws_##prefix##ws_subscribe(uws_##prefix##websocket_t *ws, const char *topic, size_t length);                                                                                                   \
-    bool uws_##prefix##ws_unsubscribe(uws_##prefix##websocket_t *ws, const char *topic, size_t length);                                                                                                 \
-    bool uws_##prefix##ws_is_subscribed(uws_##prefix##websocket_t *ws, const char *topic, size_t length);                                                                                               \
-    void uws_##prefix##ws_iterate_topics(uws_##prefix##websocket_t *ws, void (*callback)(const char *topic, size_t length));                                                                            \
-    bool uws_##prefix##ws_publish(uws_##prefix##websocket_t *ws, const char *topic, size_t topic_length, const char *message, size_t message_length);                                                   \
-    bool uws_##prefix##ws_publish_with_options(uws_##prefix##websocket_t *ws, const char *topic, size_t topic_length, const char *message, size_t message_length, uws_opcode_t opcode, bool compress);  \
-    unsigned int uws_##prefix##ws_get_buffered_amount(uws_##prefix##websocket_t *ws);                                                                                                                   \
-    size_t uws_##prefix##ws_get_remote_address(uws_##prefix##websocket_t *ws, const char **dest);                                                                                                       \
-    size_t uws_##prefix##ws_get_remote_address_as_text(uws_##prefix##websocket_t *ws, const char **dest);
-    PROTOCOLS
-#undef APP
+    typedef void (*uws_websocket_upgrade)(uws_res_t *response, uws_req_t *request, uws_socket_context_t *context);
+    typedef void (*uws_websocket_open)(uws_websocket_t *ws);
+    typedef void (*uws_websocket_message)(uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode);
+    typedef void (*uws_websocket_dropped)(uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode);
+    typedef void (*uws_websocket_drain)(uws_websocket_t *ws);
+    typedef void (*uws_websocket_ping)(uws_websocket_t *ws, const char *message, size_t length);
+    typedef void (*uws_websocket_pong)(uws_websocket_t *ws, const char *message, size_t length);
+    typedef void (*uws_websocket_close)(uws_websocket_t *ws, int code, const char *message, size_t length);
+    typedef void (*uws_websocket_subscription)(uws_websocket_t *ws, const char *topic_name, size_t topic_name_length, int new_number_of_subscriber, int old_number_of_subscriber);
+
+    typedef struct
+    {
+        uws_compress_options_t compression;
+        unsigned int maxPayloadLength;
+        unsigned short idleTimeout;
+        unsigned int maxBackpressure;
+        bool closeOnBackpressureLimit;
+        bool resetIdleTimeoutOnSend;
+        bool sendPingsAutomatically;
+        unsigned short maxLifetime;
+        uws_websocket_upgrade upgrade;
+        uws_websocket_open open;
+        uws_websocket_message message;
+        uws_websocket_dropped dropped;
+        uws_websocket_drain drain;
+        uws_websocket_ping ping;
+        uws_websocket_pong pong;
+        uws_websocket_close close;
+        uws_websocket_subscription subscription;
+    } uws_socket_behavior_t;
+
+    void uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior);
+    void uws_ws_close(uws_websocket_t *ws);
+    uws_sendstatus_t uws_ws_send(uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode);
+    uws_sendstatus_t uws_ws_send_with_options(uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode, bool compress, bool fin);
+    uws_sendstatus_t uws_ws_send_fragment(uws_websocket_t *ws, const char *message, size_t length, bool compress);
+    uws_sendstatus_t uws_ws_send_first_fragment(uws_websocket_t *ws, const char *message, size_t length, bool compress);
+    uws_sendstatus_t uws_ws_send_first_fragment_with_opcode(uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode, bool compress);
+    uws_sendstatus_t uws_ws_send_last_fragment(uws_websocket_t *ws, const char *message, size_t length, bool compress);
+    void uws_ws_end(uws_websocket_t *ws, int code, const char *message, size_t length);
+    void uws_ws_cork(uws_websocket_t *ws, void (*handler)());
+    bool uws_ws_subscribe(uws_websocket_t *ws, const char *topic, size_t length);
+    bool uws_ws_unsubscribe(uws_websocket_t *ws, const char *topic, size_t length);
+    bool uws_ws_is_subscribed(uws_websocket_t *ws, const char *topic, size_t length);
+    void uws_ws_iterate_topics(uws_websocket_t *ws, void (*callback)(const char *topic, size_t length));
+    bool uws_ws_publish(uws_websocket_t *ws, const char *topic, size_t topic_length, const char *message, size_t message_length);
+    bool uws_ws_publish_with_options(uws_websocket_t *ws, const char *topic, size_t topic_length, const char *message, size_t message_length, uws_opcode_t opcode, bool compress);
+    unsigned int uws_ws_get_buffered_amount(uws_websocket_t *ws);
+    size_t uws_ws_get_remote_address(uws_websocket_t *ws, const char **dest);
+    size_t uws_ws_get_remote_address_as_text(uws_websocket_t *ws, const char **dest);
 
 #pragma endregion
 

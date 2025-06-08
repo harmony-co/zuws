@@ -59,6 +59,7 @@ pub fn build(b: *std.Build) !void {
     uWebSockets.addCSourceFiles(.{
         .root = b.path("bindings/"),
         .files = &.{"uws.cpp"},
+        .flags = if (ssl) &.{"-DZUWS_USE_SSL"} else &.{},
     });
 
     b.installArtifact(uWebSockets);

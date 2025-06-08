@@ -1,31 +1,22 @@
-const std = @import("std");
-const uws = @import("uws");
+const zuws = @import("zuws");
+const App = zuws.App;
+const Request = zuws.Request;
+const Response = zuws.Response;
 
-fn handler(rawRes: ?*uws.uws_ssl_res_s, _: ?*uws.uws_req_s) callconv(.c) void {
-    const str = "Hello World!\n";
-    uws.uws_ssl_res_end(rawRes.?, str, str.len, false);
-}
-
-/// `uws_create_ssl_app({options})` compiled without `-Dssl` is the same as `uws_create_app()`
 pub fn main() !void {
-    const app = uws.uws_create_ssl_app(.{
+    const app: App = try .init(.{
         .key_file_name = "misc/key.pem",
         .cert_file_name = "misc/cert.pem",
         .passphrase = "1234",
-    }) orelse return error.CouldNotCreateApp;
+    });
+    defer app.deinit();
 
-    const port = 3000;
-    defer uws.uws_ssl_app_destroy(app);
+    _ = app.get("/*", struct {
+        fn f(res: *Response, req: *Request) void {
+            _ = req;
+            res.end("Hello World!\n", false);
+        }
+    }.f);
 
-    { //? Test for open port
-        const addr = try std.net.Address.parseIp4("127.0.0.1", port);
-        const sock_fd = try std.posix.socket(addr.any.family, std.posix.SOCK.STREAM | std.posix.SOCK.CLOEXEC, std.posix.IPPROTO.TCP);
-        try std.posix.bind(sock_fd, &addr.any, addr.getOsSockLen());
-        std.posix.close(sock_fd);
-    }
-
-    uws.uws_ssl_app_get(app, "/*", handler);
-
-    uws.uws_ssl_app_listen(app, port, null);
-    uws.uws_ssl_app_run(app);
+    try app.listen(3000, null);
 }

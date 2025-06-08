@@ -28,8 +28,8 @@ pub const Method = enum {
     ANY,
 };
 
-pub fn init() !App {
-    const app = c.uws_create_app(.{});
+pub fn init(opt: c.struct_us_socket_context_options_t) !App {
+    const app = c.uws_create_app(opt);
     if (app) |ptr| return .{ .ptr = ptr };
     return error.CouldNotCreateApp;
 }

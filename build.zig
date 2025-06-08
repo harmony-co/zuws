@@ -21,31 +21,33 @@ pub fn build(b: *std.Build) !void {
     uSockets.linkSystemLibrary("zlib");
     uSockets.addIncludePath(b.path("uWebSockets/uSockets/src"));
     uSockets.installHeader(b.path("uWebSockets/uSockets/src/libusockets.h"), "libusockets.h");
-    uSockets.addCSourceFiles(.{
-        .root = b.path("uWebSockets/uSockets/src/"),
-        .files = &.{
-            "bsd.c",
-            "context.c",
-            "loop.c",
-            "quic.c",
-            "socket.c",
-            "udp.c",
-            "crypto/sni_tree.cpp",
-            "crypto/openssl.c",
-            "eventing/epoll_kqueue.c",
-            "eventing/gcd.c",
-            "eventing/libuv.c",
-            "io_uring/io_context.c",
-            "io_uring/io_loop.c",
-            "io_uring/io_socket.c",
-        },
-        .flags = if (ssl) &.{"-DLIBUS_USE_OPENSSL"} else &.{"-DLIBUS_NO_SSL"},
+    var uSocketsCFiles = std.ArrayList([]const u8).init(b.allocator);
+    try uSocketsCFiles.appendSlice(&.{
+        "bsd.c",
+        "context.c",
+        "loop.c",
+        "quic.c",
+        "socket.c",
+        "udp.c",
+        "crypto/sni_tree.cpp",
+        "eventing/epoll_kqueue.c",
+        "eventing/gcd.c",
+        "eventing/libuv.c",
+        "io_uring/io_context.c",
+        "io_uring/io_loop.c",
+        "io_uring/io_socket.c",
     });
     if (ssl) {
         uSockets.linkLibCpp();
         uSockets.linkSystemLibrary("ssl");
         uSockets.linkSystemLibrary("crypto");
+        try uSocketsCFiles.append("crypto/openssl.c");
     }
+    uSockets.addCSourceFiles(.{
+        .root = b.path("uWebSockets/uSockets/src/"),
+        .files = try uSocketsCFiles.toOwnedSlice(),
+        .flags = if (ssl) &.{"-DLIBUS_USE_OPENSSL"} else &.{"-DLIBUS_NO_SSL"},
+    });
 
     const uWebSockets = b.addLibrary(.{
         .name = "uWebSockets",

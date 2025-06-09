@@ -1,4 +1,5 @@
 const std = @import("std");
+const linkBoringSSL = @import("./build.boringssl.zig").linkBoringSSL;
 
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
@@ -39,8 +40,10 @@ pub fn build(b: *std.Build) !void {
     });
     if (ssl) {
         uSockets.linkLibCpp();
-        uSockets.linkSystemLibrary("ssl");
-        uSockets.linkSystemLibrary("crypto");
+        try linkBoringSSL(uSockets, .{
+            .target = target,
+            .optimize = optimize,
+        });
         try uSocketsCFiles.append("crypto/openssl.c");
     }
     uSockets.addCSourceFiles(.{

@@ -603,4 +603,9 @@ const gen_crypto_sources = &.{
     "gen/crypto/md5-586-linux.S",
     "gen/crypto/md5-x86_64-apple.S",
     "gen/crypto/md5-x86_64-linux.S",
+
+    "third_party/fiat/asm/fiat_curve25519_adx_mul.S",
+    "third_party/fiat/asm/fiat_curve25519_adx_square.S",
+    "third_party/fiat/asm/fiat_p256_adx_mul.S",
+    "third_party/fiat/asm/fiat_p256_adx_sqr.S",
 };

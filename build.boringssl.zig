@@ -173,7 +173,6 @@ const bssl_sources = &.{
     "tool/server.cc",
     "tool/sign.cc",
     "tool/speed.cc",
-    "tool/tool.cc",
     "tool/transport_common.cc",
 };
 

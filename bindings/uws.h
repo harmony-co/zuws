@@ -4,20 +4,17 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "../uWebSockets/uSockets/src/libusockets.h"
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-    struct uws_app_s;
-    typedef struct uws_app_s uws_app_t;
-    struct uws_res_s;
-    typedef struct uws_res_s uws_res_t;
-    struct uws_req_s;
-    typedef struct uws_req_s uws_req_t;
-    struct uws_socket_context_s;
-    typedef struct uws_socket_context_s uws_socket_context_t;
+
     struct uws_websocket_s;
     typedef struct uws_websocket_s uws_websocket_t;
+    struct uws_socket_context_s;
+    typedef struct uws_socket_context_s uws_socket_context_t;
 
     typedef struct
     {
@@ -58,10 +55,16 @@ extern "C"
         DEDICATED_COMPRESSOR = 15 << 4 | 8
     } uws_compress_options_t;
 
-#pragma region uWS-app
+#pragma region uWS-App
 
-    typedef void (*uws_listen_handler)(struct us_listen_socket_t *listen_socket);
+    struct uws_app_s;
+    typedef struct uws_app_s uws_app_t;
+    struct uws_res_s;
+    typedef struct uws_res_s uws_res_t;
+    struct uws_req_s;
+    typedef struct uws_req_s uws_req_t;
     typedef void (*uws_method_handler)(uws_res_t *response, uws_req_t *request);
+    typedef void (*uws_listen_handler)(struct us_listen_socket_t *listen_socket);
 
 #define HTTP_METHODS \
     METHOD(get)      \
@@ -80,7 +83,12 @@ extern "C"
     HTTP_METHODS
 #undef METHOD
 
-    uws_app_t *uws_create_app();
+#if ZUWS_USE_SSL
+    uws_app_t *uws_create_app(struct us_socket_context_options_t options);
+#else
+uws_app_t *uws_create_app();
+#endif
+
     void uws_app_destroy(uws_app_t *app);
     void uws_app_run(uws_app_t *app);
     void uws_app_listen(uws_app_t *app, int port, uws_listen_handler handler);
@@ -89,15 +97,15 @@ extern "C"
 #pragma endregion
 #pragma region uWs-Response
 
-    typedef bool (*uws_res_on_writable_handler)(uws_res_t *res, uintmax_t);
-    typedef bool (*uws_res_on_aborted_handler)(uws_res_t *res);
-    typedef void (*uws_res_on_data_handler)(uws_res_t *res, const char *chunk, size_t chunk_length, bool is_end);
-
     typedef struct
     {
         bool ok;
         bool has_responded;
     } uws_try_end_result_t;
+
+    typedef bool (*uws_res_on_writable_handler)(uws_res_t *res, uintmax_t);
+    typedef bool (*uws_res_on_aborted_handler)(uws_res_t *res);
+    typedef void (*uws_res_on_data_handler)(uws_res_t *res, const char *chunk, size_t chunk_length, bool is_end);
 
     void uws_res_close(uws_res_t *res);
     void uws_res_end(uws_res_t *res, const char *data, size_t length, bool close_connection);

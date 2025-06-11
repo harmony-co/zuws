@@ -1,4 +1,5 @@
 const std = @import("std");
+const linkBoringSSL = @import("./build.boringssl.zig").linkBoringSSL;
 
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
@@ -6,8 +7,10 @@ pub fn build(b: *std.Build) !void {
 
     const config_options = b.addOptions();
     const debug_logs = b.option(bool, "debug_logs", "Whether to enable debug logs for route creation.") orelse (optimize == .Debug);
+    const ssl = b.option(bool, "ssl", "Whether to enable SSL.") orelse false;
 
     config_options.addOption(bool, "debug_logs", debug_logs);
+    config_options.addOption(bool, "is_ssl", ssl);
 
     const uSockets = b.addLibrary(.{
         .name = "uSockets",
@@ -20,41 +23,35 @@ pub fn build(b: *std.Build) !void {
     uSockets.linkSystemLibrary("zlib");
     uSockets.addIncludePath(b.path("uWebSockets/uSockets/src"));
     uSockets.installHeader(b.path("uWebSockets/uSockets/src/libusockets.h"), "libusockets.h");
+
+    var uSocketsCFiles = std.ArrayList([]const u8).init(b.allocator);
+    try uSocketsCFiles.appendSlice(&.{
+        "bsd.c",
+        "context.c",
+        "loop.c",
+        "quic.c",
+        "socket.c",
+        "udp.c",
+        "crypto/sni_tree.cpp",
+        "eventing/epoll_kqueue.c",
+        "eventing/gcd.c",
+        "eventing/libuv.c",
+        "io_uring/io_context.c",
+        "io_uring/io_loop.c",
+        "io_uring/io_socket.c",
+    });
+
+    if (ssl) {
+        uSockets.linkLibCpp();
+        try linkBoringSSL(b, uSockets);
+        try uSocketsCFiles.append("crypto/openssl.c");
+    }
+
     uSockets.addCSourceFiles(.{
         .root = b.path("uWebSockets/uSockets/src/"),
-        .files = &.{
-            "bsd.c",
-            "context.c",
-            "loop.c",
-            "quic.c",
-            "socket.c",
-            "udp.c",
-            "crypto/sni_tree.cpp",
-            "eventing/epoll_kqueue.c",
-            "eventing/gcd.c",
-            "eventing/libuv.c",
-            "io_uring/io_context.c",
-            "io_uring/io_loop.c",
-            "io_uring/io_socket.c",
-        },
-        .flags = &.{"-DLIBUS_NO_SSL"},
+        .files = try uSocketsCFiles.toOwnedSlice(),
+        .flags = if (ssl) &.{"-DLIBUS_USE_OPENSSL"} else &.{"-DLIBUS_NO_SSL"},
     });
-
-    const uWebSockets = b.addLibrary(.{
-        .name = "uWebSockets",
-        .root_module = b.createModule(.{
-            .target = target,
-            .optimize = optimize,
-        }),
-    });
-    uWebSockets.linkLibCpp();
-    uWebSockets.linkLibrary(uSockets);
-    uWebSockets.addCSourceFiles(.{
-        .root = b.path("bindings/"),
-        .files = &.{"uws.cpp"},
-    });
-
-    b.installArtifact(uWebSockets);
 
     const uws = b.addTranslateC(.{
         .root_source_file = b.path("bindings/uws.h"),
@@ -62,7 +59,16 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize,
     });
 
-    const uws_module = uws.addModule("uws");
+    uws.defineCMacro("ZUWS_USE_SSL", if (ssl) "1" else "0");
+
+    const uWebSockets = uws.addModule("uws");
+    uWebSockets.link_libcpp = true;
+    uWebSockets.linkLibrary(uSockets);
+    uWebSockets.addCSourceFiles(.{
+        .root = b.path("bindings/"),
+        .files = &.{"uws.cpp"},
+        .flags = if (ssl) &.{"-DZUWS_USE_SSL"} else &.{},
+    });
 
     const zuws = b.addModule("zuws", .{
         .root_source_file = b.path("src/root.zig"),
@@ -71,8 +77,7 @@ pub fn build(b: *std.Build) !void {
     });
 
     zuws.addOptions("config", config_options);
-    zuws.addImport("uws", uws_module);
-    zuws.linkLibrary(uWebSockets);
+    zuws.addImport("uws", uWebSockets);
     const libzuws = b.addLibrary(.{
         .name = "zuws",
         .linkage = .static,
@@ -97,7 +102,7 @@ pub fn build(b: *std.Build) !void {
             }),
         });
 
-        exe.root_module.addImport("uws", uws_module);
+        exe.root_module.addImport("uws", uWebSockets);
         exe.root_module.addImport("zuws", zuws);
         b.installArtifact(exe);
 

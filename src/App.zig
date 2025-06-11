@@ -30,8 +30,6 @@ pub const Method = enum {
 
 pub const init = if (config.is_ssl) initSSL else initNoSSL;
 
-// Zig seems to be causing issues with the auto generated bindings of `pub extern fn uws_create_app(...) ?*c.uws_app_t`
-// extern fn uws_create_app(options: c.struct_us_socket_context_options_t) ?*c.uws_app_t;
 fn initSSL(opt: c.struct_us_socket_context_options_t) !App {
     const app = c.uws_create_app(opt);
     if (app) |ptr| return .{ .ptr = ptr };

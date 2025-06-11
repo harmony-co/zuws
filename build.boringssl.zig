@@ -1,16 +1,11 @@
 const std = @import("std");
 
 pub fn linkBoringSSL(
-    linkee: *std.Build.Step.Compile,
-    options: struct {
-        target: std.Build.ResolvedTarget,
-        optimize: std.builtin.OptimizeMode = .Debug,
-    },
+    b: *std.Build,
+    uSockets: *std.Build.Step.Compile,
 ) !void {
-    var b = linkee.root_module.owner;
-
-    const target = options.target;
-    const optimize = options.optimize;
+    const target = uSockets.root_module.resolved_target.?;
+    const optimize = uSockets.root_module.optimize.?;
 
     const libfipsmodule = b.addStaticLibrary(.{
         .name = "fipsmodule",
@@ -29,7 +24,7 @@ pub fn linkBoringSSL(
         .root = b.path("uWebSockets/uSockets/boringssl"),
         .language = .assembly_with_preprocessor,
     });
-    linkee.linkLibrary(libfipsmodule);
+    uSockets.linkLibrary(libfipsmodule);
 
     const libcrypto = b.addStaticLibrary(.{
         .name = "crypto",
@@ -49,7 +44,7 @@ pub fn linkBoringSSL(
         .language = .assembly_with_preprocessor,
     });
 
-    linkee.linkLibrary(libcrypto);
+    uSockets.linkLibrary(libcrypto);
 
     const libssl = b.addStaticLibrary(.{
         .name = "ssl",
@@ -65,7 +60,7 @@ pub fn linkBoringSSL(
         .files = ssl_sources,
         .root = b.path("uWebSockets/uSockets/boringssl"),
     });
-    linkee.linkLibrary(libssl);
+    uSockets.linkLibrary(libssl);
 
     const libdecrepit = b.addStaticLibrary(.{
         .name = "decrepit",
@@ -80,7 +75,7 @@ pub fn linkBoringSSL(
         .files = decrepit_sources,
         .root = b.path("uWebSockets/uSockets/boringssl"),
     });
-    linkee.linkLibrary(libdecrepit);
+    uSockets.linkLibrary(libdecrepit);
 
     const libpki = b.addStaticLibrary(.{
         .name = "pki",
@@ -96,7 +91,7 @@ pub fn linkBoringSSL(
         .root = b.path("uWebSockets/uSockets/boringssl"),
     });
 
-    linkee.linkLibrary(libpki);
+    uSockets.linkLibrary(libpki);
 
     const bssl = b.addLibrary(.{
         .name = "bssl",
@@ -115,7 +110,7 @@ pub fn linkBoringSSL(
         .root = b.path("uWebSockets/uSockets/boringssl"),
     });
 
-    linkee.linkLibrary(bssl);
+    uSockets.linkLibrary(bssl);
 }
 
 const pki_sources = &.{

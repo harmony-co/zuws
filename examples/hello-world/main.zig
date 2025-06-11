@@ -4,12 +4,11 @@ const Request = zuws.Request;
 const Response = zuws.Response;
 
 pub fn main() !void {
-    const app: App = try .init(.{});
+    const app: App = try .init();
     defer app.deinit();
 
     _ = app.get("/*", struct {
-        fn f(res: *Response, req: *Request) void {
-            _ = req;
+        fn f(res: *Response, _: *Request) void {
             res.end("Hello World!\n", false);
         }
     }.f);

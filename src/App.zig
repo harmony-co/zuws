@@ -12,7 +12,7 @@ const App = @This();
 
 pub const MethodHandler = *const fn (*Response, *Request) void;
 
-ptr: *c.uws_app_s,
+ptr: *c.uws_app_t,
 
 pub const Method = enum {
     GET,
@@ -28,8 +28,18 @@ pub const Method = enum {
     ANY,
 };
 
-pub fn init(opt: c.struct_us_socket_context_options_t) !App {
+pub const init = if (config.is_ssl) initSSL else initNoSSL;
+
+// Zig seems to be causing issues with the auto generated bindings of `pub extern fn uws_create_app(...) ?*c.uws_app_t`
+// extern fn uws_create_app(options: c.struct_us_socket_context_options_t) ?*c.uws_app_t;
+fn initSSL(opt: c.struct_us_socket_context_options_t) !App {
     const app = c.uws_create_app(opt);
+    if (app) |ptr| return .{ .ptr = ptr };
+    return error.CouldNotCreateApp;
+}
+
+fn initNoSSL() !App {
+    const app = c.uws_create_app();
     if (app) |ptr| return .{ .ptr = ptr };
     return error.CouldNotCreateApp;
 }

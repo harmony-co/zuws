@@ -10,20 +10,27 @@
 
 #pragma region uWS-App
 
-#define METHOD(name)                                                                                                        \
-    void uws_app_##name(uws_app_t *app, const char *pattern, uws_method_handler handler)                                    \
-    {                                                                                                                       \
+#define METHOD(name)                                                                                                                         \
+    void uws_app_##name(uws_app_t *app, const char *pattern, uws_method_handler handler)                                                     \
+    {                                                                                                                                        \
         ((uWS::TemplatedApp<IS_SSL> *)app)->name(pattern, [handler](auto *res, auto *req) { handler((uws_res_t *)res, (uws_req_t *)req); }); \
     };
 HTTP_METHODS
 #undef METHOD
 
-uws_app_t *uws_create_app(struct us_socket_context_options_t options = {})
+#if IS_SSL
+uws_app_t *uws_create_app(struct us_socket_context_options_t options)
 {
     uWS::SocketContextOptions sco;
     memcpy(&sco, &options, sizeof(struct us_socket_context_options_t));
     return (uws_app_t *)new uWS::TemplatedApp<IS_SSL>(sco);
 }
+#else
+uws_app_t *uws_create_app()
+{
+    return (uws_app_t *)new uWS::TemplatedApp<IS_SSL>();
+}
+#endif
 
 void uws_app_destroy(uws_app_t *app)
 {
@@ -41,7 +48,7 @@ void uws_app_listen(uws_app_t *app, int port, uws_listen_handler handler)
         handler = [](auto) {};
 
     ((uWS::TemplatedApp<IS_SSL> *)app)->listen(port, [handler](struct us_listen_socket_t *listen_socket)
-                              { handler((struct us_listen_socket_t *)listen_socket); });
+                                               { handler((struct us_listen_socket_t *)listen_socket); });
 }
 
 void uws_app_close(uws_app_t *app)
@@ -65,7 +72,7 @@ void uws_res_end(uws_res_t *res, const char *data, size_t length, bool close_con
 void uws_res_cork(uws_res_t *res, void (*callback)(uws_res_t *res))
 {
     ((uWS::HttpResponse<IS_SSL> *)res)->cork([=]()
-                                          { callback(res); });
+                                             { callback(res); });
 }
 
 void uws_res_pause(uws_res_t *res)
@@ -121,19 +128,19 @@ bool uws_res_has_responded(uws_res_t *res)
 void uws_res_on_writable(uws_res_t *res, uws_res_on_writable_handler handler)
 {
     ((uWS::HttpResponse<IS_SSL> *)res)->onWritable([handler, res](uintmax_t a)
-                                                { return handler(res, a); });
+                                                   { return handler(res, a); });
 }
 
 void uws_res_on_aborted(uws_res_t *res, uws_res_on_aborted_handler handler)
 {
     ((uWS::HttpResponse<IS_SSL> *)res)->onAborted([handler, res]
-                                               { handler(res); });
+                                                  { handler(res); });
 }
 
 void uws_res_on_data(uws_res_t *res, uws_res_on_data_handler handler)
 {
     ((uWS::HttpResponse<IS_SSL> *)res)->onData([handler, res](auto chunk, bool is_end)
-                                            { handler(res, chunk.data(), chunk.length(), is_end); });
+                                               { handler(res, chunk.data(), chunk.length(), is_end); });
 }
 
 void uws_res_upgrade(uws_res_t *res, void *data, const char *sec_web_socket_key, size_t sec_web_socket_key_length, const char *sec_web_socket_protocol, size_t sec_web_socket_protocol_length, const char *sec_web_socket_extensions, size_t sec_web_socket_extensions_length, uws_socket_context_t *ws)

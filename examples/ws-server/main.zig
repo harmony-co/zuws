@@ -6,7 +6,7 @@ const Response = zuws.Response;
 const WebSocket = zuws.WebSocket;
 
 pub fn main() !void {
-    const app: App = try .init(.{});
+    const app: App = try .init();
     defer app.deinit();
 
     _ = app.ws("/ws", .{

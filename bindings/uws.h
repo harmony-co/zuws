@@ -83,7 +83,12 @@ extern "C"
     HTTP_METHODS
 #undef METHOD
 
+#if ZUWS_USE_SSL
     uws_app_t *uws_create_app(struct us_socket_context_options_t options);
+#else
+uws_app_t *uws_create_app();
+#endif
+
     void uws_app_destroy(uws_app_t *app);
     void uws_app_run(uws_app_t *app);
     void uws_app_listen(uws_app_t *app, int port, uws_listen_handler handler);

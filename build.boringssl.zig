@@ -7,6 +7,8 @@ pub fn linkBoringSSL(
     const target = uSockets.root_module.resolved_target.?;
     const optimize = uSockets.root_module.optimize.?;
 
+    const boringssl = b.dependency("boringssl", .{});
+
     const libfipsmodule = b.addStaticLibrary(.{
         .name = "fipsmodule",
         .target = target,
@@ -14,14 +16,14 @@ pub fn linkBoringSSL(
     });
     libfipsmodule.linkLibC();
     libfipsmodule.linkLibCpp();
-    libfipsmodule.addIncludePath(b.path("uWebSockets/uSockets/boringssl/include"));
+    libfipsmodule.addIncludePath(boringssl.path("include"));
     libfipsmodule.addCSourceFiles(.{
         .files = fipsmodule_sources,
-        .root = b.path("uWebSockets/uSockets/boringssl"),
+        .root = boringssl.path(""),
     });
     libfipsmodule.addCSourceFiles(.{
         .files = gen_fipsmodule_sources,
-        .root = b.path("uWebSockets/uSockets/boringssl"),
+        .root = boringssl.path(""),
         .language = .assembly_with_preprocessor,
     });
     uSockets.linkLibrary(libfipsmodule);
@@ -33,14 +35,14 @@ pub fn linkBoringSSL(
     });
     libcrypto.linkLibC();
     libcrypto.linkLibrary(libfipsmodule);
-    libcrypto.addIncludePath(b.path("uWebSockets/uSockets/boringssl/include"));
+    libcrypto.addIncludePath(boringssl.path("include"));
     libcrypto.addCSourceFiles(.{
         .files = crypto_sources,
-        .root = b.path("uWebSockets/uSockets/boringssl"),
+        .root = boringssl.path(""),
     });
     libcrypto.addCSourceFiles(.{
         .files = gen_crypto_sources,
-        .root = b.path("uWebSockets/uSockets/boringssl"),
+        .root = boringssl.path(""),
         .language = .assembly_with_preprocessor,
     });
 
@@ -54,11 +56,11 @@ pub fn linkBoringSSL(
     libssl.linkLibC();
     libssl.linkLibCpp();
     libssl.linkLibrary(libcrypto);
-    libssl.addIncludePath(b.path("uWebSockets/uSockets/boringssl/include"));
-    libssl.installHeadersDirectory(b.path("uWebSockets/uSockets/boringssl/include"), "", .{});
+    libssl.addIncludePath(boringssl.path("include"));
+    libssl.installHeadersDirectory(boringssl.path("include"), "", .{});
     libssl.addCSourceFiles(.{
         .files = ssl_sources,
-        .root = b.path("uWebSockets/uSockets/boringssl"),
+        .root = boringssl.path(""),
     });
     uSockets.linkLibrary(libssl);
 
@@ -70,10 +72,10 @@ pub fn linkBoringSSL(
     libdecrepit.linkLibC();
     libdecrepit.linkLibrary(libcrypto);
     libdecrepit.linkLibrary(libssl);
-    libdecrepit.addIncludePath(b.path("uWebSockets/uSockets/boringssl/include"));
+    libdecrepit.addIncludePath(boringssl.path("include"));
     libdecrepit.addCSourceFiles(.{
         .files = decrepit_sources,
-        .root = b.path("uWebSockets/uSockets/boringssl"),
+        .root = boringssl.path(""),
     });
     uSockets.linkLibrary(libdecrepit);
 
@@ -85,10 +87,10 @@ pub fn linkBoringSSL(
     libpki.linkLibC();
     libpki.linkLibCpp();
     libpki.linkLibrary(libcrypto);
-    libpki.addIncludePath(b.path("uWebSockets/uSockets/boringssl/include"));
+    libpki.addIncludePath(boringssl.path("include"));
     libpki.addCSourceFiles(.{
         .files = pki_sources,
-        .root = b.path("uWebSockets/uSockets/boringssl"),
+        .root = boringssl.path(""),
     });
 
     uSockets.linkLibrary(libpki);
@@ -104,10 +106,10 @@ pub fn linkBoringSSL(
     bssl.linkLibCpp();
     bssl.linkLibrary(libssl);
     bssl.linkLibrary(libcrypto);
-    bssl.addIncludePath(b.path("uWebSockets/uSockets/boringssl/include"));
+    bssl.addIncludePath(boringssl.path("include"));
     bssl.addCSourceFiles(.{
         .files = bssl_sources,
-        .root = b.path("uWebSockets/uSockets/boringssl"),
+        .root = boringssl.path(""),
     });
 
     uSockets.linkLibrary(bssl);

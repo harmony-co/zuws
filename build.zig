@@ -147,6 +147,14 @@ pub fn build(b: *std.Build) !void {
     const example_step = b.step("example", "Build and run an example.");
     const example_assembly_step = b.step("example-asm", "Build and emit an example's assembly.");
 
+    const export_test = b.addTest(.{
+        .root_module = zuws,
+    });
+
+    const run_export_test = b.addRunArtifact(export_test);
+    const test_step = b.step("test", "Run unit tests on the exports");
+    test_step.dependOn(&run_export_test.step);
+
     if (b.args) |args| {
         const example_name = args[0];
         const path = try std.fmt.allocPrint(b.allocator, "examples/{s}/main.zig", .{example_name});

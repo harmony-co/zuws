@@ -4,33 +4,38 @@ Opinionated zig bindings for [`uWebsockets`](https://github.com/uNetworking/uWeb
 
 # Installation
 
-`zuws` is available using the `zig fetch` command.
+Currently zig does not support nested submodules, the recommended way is to add zuws as a submodule.
 
 ```sh
-zig fetch --save git+https://github.com/harmony-co/zuws
+git submodule add git@github.com:harmony-co/zuws.git
 ```
 
-To add it to your project, after running the command above add the following to your `build.zig` file:
+In your `build.zig.zon` file add the following:
+
+```zig
+.dependencies = .{
+    .zuws = .{
+        .path = "zuws", // or the path you saved zuws to
+    },
+},
+```
+
+And import it on your `build.zig` file:
 
 ```zig
 const zuws = b.dependency("zuws", .{
     .target = target,
     .optimize = optimize,
+    .debug_logs = true,
+    .ssl = false,
+    .no_zlib = false,
 });
 
 exe.root_module.addImport("zuws", zuws.module("zuws"));
 ```
 
 > [!NOTE]
-> You can disable the default debug logs by passing `.debug_logs = false` as an option.
-
-## Using the C bindings
-
-You can import the C bindings directly instead of the `zuws` wrapper by using the following:
-
-```zig
-exe.root_module.addImport("uws", zuws.module("uws"));
-```
+> The raw C bindings are available via `zuws.module("uws")`
 
 # Usage
 
@@ -54,6 +59,12 @@ fn hello(res: *Response, req: *Request) void {
     res.end(str, false);
 }
 ```
+
+## SSL support via BoringSSL
+
+Enabling ssl in `zuws` is as simple as passing `.ssl = true` to the build options, once enabled `App.init` will now ask for the options which can be found [here](https://github.com/uNetworking/uSockets/blob/182b7e4fe7211f98682772be3df89c71dc4884fa/src/libusockets.h#L127).
+
+You can also check our [example](./examples/hello-world-ssl) for using ssl.
 
 # Grouping
 

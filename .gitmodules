@@ -1,3 +1,6 @@
 [submodule "uWebSockets"]
 	path = uWebSockets
 	url = git@github.com:uNetworking/uWebSockets
+[submodule "zlib"]
+	path = zlib
+	url = git@github.com:madler/zlib.git

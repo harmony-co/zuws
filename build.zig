@@ -12,6 +12,51 @@ pub fn build(b: *std.Build) !void {
     config_options.addOption(bool, "debug_logs", debug_logs);
     config_options.addOption(bool, "is_ssl", ssl);
 
+    const zlib_c = b.dependency("zlib", .{});
+    const zlib = b.addLibrary(.{
+        .name = "z",
+        .linkage = .static,
+        .root_module = b.createModule(.{
+            .target = target,
+            .optimize = optimize,
+        }),
+    });
+
+    zlib.linkLibC();
+    zlib.addCSourceFiles(.{
+        .root = zlib_c.path(""),
+        .files = &.{
+            "adler32.c",
+            "crc32.c",
+            "deflate.c",
+            "infback.c",
+            "inffast.c",
+            "inflate.c",
+            "inftrees.c",
+            "trees.c",
+            "zutil.c",
+            "compress.c",
+            "uncompr.c",
+            "gzclose.c",
+            "gzlib.c",
+            "gzread.c",
+            "gzwrite.c",
+        },
+        .flags = &.{
+            "-DHAVE_SYS_TYPES_H",
+            "-DHAVE_STDINT_H",
+            "-DHAVE_STDDEF_H",
+            "-DZ_HAVE_UNISTD_H",
+        },
+    });
+
+    zlib.installHeadersDirectory(zlib_c.path(""), "", .{
+        .include_extensions = &.{
+            "zconf.h",
+            "zlib.h",
+        },
+    });
+
     const uSockets = b.addLibrary(.{
         .name = "uSockets",
         .root_module = b.createModule(.{
@@ -20,7 +65,7 @@ pub fn build(b: *std.Build) !void {
         }),
     });
 
-    uSockets.linkSystemLibrary("zlib");
+    uSockets.linkLibrary(zlib);
     uSockets.addIncludePath(b.path("uWebSockets/uSockets/src"));
     uSockets.installHeader(b.path("uWebSockets/uSockets/src/libusockets.h"), "libusockets.h");
 

@@ -7,6 +7,9 @@
         .zlib = .{
             .path = "zlib",
         },
+        .uSockets = .{
+            .path = "uWebSockets/uSockets/src",
+        },
     },
     .paths = .{
         "build.zig",

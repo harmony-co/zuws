@@ -57,6 +57,7 @@ pub fn build(b: *std.Build) !void {
         },
     });
 
+    const us = b.dependency("uSockets", .{});
     const uSockets = b.addLibrary(.{
         .name = "uSockets",
         .root_module = b.createModule(.{
@@ -66,8 +67,8 @@ pub fn build(b: *std.Build) !void {
     });
 
     uSockets.linkLibrary(zlib);
-    uSockets.addIncludePath(b.path("uWebSockets/uSockets/src"));
-    uSockets.installHeader(b.path("uWebSockets/uSockets/src/libusockets.h"), "libusockets.h");
+    uSockets.addIncludePath(us.path(""));
+    uSockets.installHeader(us.path("libusockets.h"), "libusockets.h");
 
     var uSocketsCFiles = std.ArrayList([]const u8).init(b.allocator);
     try uSocketsCFiles.appendSlice(&.{
@@ -93,7 +94,7 @@ pub fn build(b: *std.Build) !void {
     }
 
     uSockets.addCSourceFiles(.{
-        .root = b.path("uWebSockets/uSockets/src/"),
+        .root = us.path(""),
         .files = try uSocketsCFiles.toOwnedSlice(),
         .flags = if (ssl) &.{"-DLIBUS_USE_OPENSSL"} else &.{"-DLIBUS_NO_SSL"},
     });

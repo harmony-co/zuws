@@ -8,7 +8,7 @@ pub const InternalMethod = blk: {
             .tag_type = u8,
             .fields = fields ++ [1]std.builtin.Type.EnumField{.{ .name = "ANY", .value = fields[fields.len - 1].value + 1 }},
             .decls = &.{},
-            .is_exhaustive = false,
+            .is_exhaustive = true,
         },
     });
 };

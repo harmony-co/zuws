@@ -1,9 +1,93 @@
 const c = @import("uws");
+const std = @import("std");
 const Request = @import("./Request.zig");
 
 const Response = @This();
 
 ptr: *c.uws_res_s,
+
+/// As per: https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status
+pub const StatusCode = enum(u16) {
+    Continue = 100,
+    SwitchingProtocols,
+    Processing,
+    EarlyHints,
+    OK = 200,
+    Created,
+    Accepted,
+    @"Non-AuthoritativeInformation",
+    NoContent,
+    ResetContent,
+    PartialContent,
+    @"Multi-Status",
+    AlreadyReported,
+    @"IM Used" = 226,
+    MultipleChoices = 300,
+    MovedPermanently,
+    Found,
+    SeeOther,
+    NotModified,
+    UseProxy,
+    TemporaryRedirect = 307,
+    PermanentRedirect,
+    BadRequest = 400,
+    Unauthorized,
+    PaymentRequired,
+    Forbidden,
+    NotFound,
+    MethodNotAllowed,
+    NotAcceptable,
+    ProxyAuthenticationRequired,
+    RequestTimeout,
+    Conflict,
+    Gone,
+    LengthRequired,
+    PreconditionFailed,
+    ContentTooLarge,
+    URITooLong,
+    UnsupportedMediaType,
+    RangeNotSatisfiable,
+    ExpectationFailed,
+    @"I'm a teapot",
+    MisdirectedRequest = 421,
+    UnprocessableContent,
+    Locked,
+    FailedDependency,
+    TooEarly,
+    UpgradeRequired,
+    PreconditionRequired = 428,
+    TooManyRequests,
+    RequestHeaderFieldsTooLarge = 431,
+    UnavailableForLegalReasons = 451,
+    InternalServerError = 500,
+    NotImplemented,
+    BadGateway,
+    ServiceUnavailable,
+    GatewayTimeout,
+    @"HTTP Version Not Supported",
+    VariantAlsoNegotiates,
+    InsufficientStorage,
+    LoopDetected,
+    NotExtended = 510,
+    NetworkAuthenticationRequired,
+
+    pub fn toString(comptime self: StatusCode) []const u8 {
+        const text = comptime blk: {
+            const status = @tagName(self);
+            var temp: []const u8 = &.{ status[0], status[1] };
+            if (status.len < 3) break :blk temp;
+            var i: usize = 2;
+            while (i < status.len) : (i += 1) {
+                if (i > 2 and std.ascii.isUpper(status[i]) and (status[i - 1] != '-' or status[i - 1] == ' ')) {
+                    temp = temp ++ [1]u8{' '};
+                }
+                temp = temp ++ [1]u8{status[i]};
+            }
+            break :blk temp;
+        };
+        return std.fmt.comptimePrint("{d} {s}", .{ @intFromEnum(self), text });
+    }
+};
 
 pub fn close(res: *const Response) void {
     c.uws_res_close(res.ptr);
@@ -36,6 +120,11 @@ pub fn writeContinue(res: *const Response) void {
 
 pub fn writeStatus(res: *const Response, status: []const u8) void {
     c.uws_res_write_status(res.ptr, status.ptr, status.len);
+}
+
+pub fn writeStatusCode(res: *const Response, comptime status: StatusCode) void {
+    const status_text = comptime status.toString();
+    res.writeStatus(status_text);
 }
 
 pub fn writeHeader(res: *const Response, key: []const u8, value: [:0]const u8) void {

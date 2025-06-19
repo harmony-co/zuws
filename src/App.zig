@@ -7,6 +7,7 @@ const WebSocket = @import("./WebSocket.zig");
 
 pub const Group = @import("./Group.zig");
 const info = std.log.scoped(.uws_debug).info;
+const InternalMethod = @import("./internal.zig").InternalMethod;
 
 const App = @This();
 
@@ -14,7 +15,7 @@ pub const MethodHandler = *const fn (*Response, *Request) void;
 
 ptr: *c.uws_app_t,
 
-pub const Method = enum {
+pub const Method = enum(u8) {
     GET,
     POST,
     PUT,
@@ -24,8 +25,6 @@ pub const Method = enum {
     HEAD,
     CONNECT,
     TRACE,
-    /// Never possible to receive it, purely for internal purposes
-    ANY,
 };
 
 pub const init = if (config.is_ssl) initSSL else initNoSSL;
@@ -61,27 +60,27 @@ pub fn close(app: *const App) void {
     c.uws_app_close(app.ptr);
 }
 
-pub const get = CreateMethodFn("get", true).f;
-pub const post = CreateMethodFn("post", true).f;
-pub const put = CreateMethodFn("put", true).f;
-pub const options = CreateMethodFn("options", true).f;
-pub const del = CreateMethodFn("del", true).f;
-pub const patch = CreateMethodFn("patch", true).f;
-pub const head = CreateMethodFn("head", true).f;
-pub const connect = CreateMethodFn("connect", true).f;
-pub const trace = CreateMethodFn("trace", true).f;
-pub const any = CreateMethodFn("any", true).f;
+pub const get = CreateMethodFn(.GET);
+pub const post = CreateMethodFn(.POST);
+pub const put = CreateMethodFn(.PUT);
+pub const options = CreateMethodFn(.OPTIONS);
+pub const del = CreateMethodFn(.DEL);
+pub const patch = CreateMethodFn(.PATCH);
+pub const head = CreateMethodFn(.HEAD);
+pub const connect = CreateMethodFn(.CONNECT);
+pub const trace = CreateMethodFn(.TRACE);
+pub const any = CreateMethodFn(.ANY);
 
-pub const rawGet = CreateMethodFn("get", false).f;
-pub const rawPost = CreateMethodFn("post", false).f;
-pub const rawPut = CreateMethodFn("put", false).f;
-pub const rawOptions = CreateMethodFn("options", false).f;
-pub const rawDel = CreateMethodFn("del", false).f;
-pub const rawPatch = CreateMethodFn("patch", false).f;
-pub const rawHead = CreateMethodFn("head", false).f;
-pub const rawConnect = CreateMethodFn("connect", false).f;
-pub const rawTrace = CreateMethodFn("trace", false).f;
-pub const rawAny = CreateMethodFn("any", false).f;
+pub const rawGet = CreateRawMethodFn(.GET);
+pub const rawPost = CreateRawMethodFn(.POST);
+pub const rawPut = CreateRawMethodFn(.PUT);
+pub const rawOptions = CreateRawMethodFn(.OPTIONS);
+pub const rawDel = CreateRawMethodFn(.DEL);
+pub const rawPatch = CreateRawMethodFn(.PATCH);
+pub const rawHead = CreateRawMethodFn(.HEAD);
+pub const rawConnect = CreateRawMethodFn(.CONNECT);
+pub const rawTrace = CreateRawMethodFn(.TRACE);
+pub const rawAny = CreateRawMethodFn(.ANY);
 
 pub fn group(app: *const App, g: *Group.Group) !void {
     for (g.list.items) |item| {
@@ -271,27 +270,47 @@ fn subscriptionWrapper(handler: *const fn (ws: *WebSocket, topic: [:0]const u8, 
     }.subscriptionHandler;
 }
 
-/// **Args**:
-/// * `method` - A ***lowercase*** http method; refers to `bindings/uws.h` -- `HTTP_METHODS`
-fn CreateMethodFn(comptime method: [:0]const u8, comptime useWrapper: bool) type {
-    var temp_up: [8]u8 = undefined;
-    const upper_method = std.ascii.upperString(&temp_up, method);
-    const log_str = std.fmt.comptimePrint(if (useWrapper) "Registering {s} route: " else "Registering raw {s} route: ", .{upper_method}) ++ "{s}";
+const WrappedMethodFunction = fn (app: *const App, pattern: [:0]const u8, comptime handler: MethodHandler) *const App;
+const RawMethodFunction = fn (app: *const App, pattern: [:0]const u8, handler: c.uws_method_handler) void;
 
-    return if (useWrapper) struct {
-        fn f(app: *const App, pattern: [:0]const u8, comptime handler: MethodHandler) *const App {
-            if (config.debug_logs) {
-                info(log_str, .{pattern});
+fn CreateMethodFn(comptime method: InternalMethod) WrappedMethodFunction {
+    return InnerMethodFn(method, true).f;
+}
+
+fn CreateRawMethodFn(comptime method: InternalMethod) RawMethodFunction {
+    return InnerMethodFn(method, false).f;
+}
+
+fn InnerMethodFn(comptime method: InternalMethod, comptime useWrapper: bool) type {
+    comptime {
+        const upper_method = @tagName(method);
+        const lower_method: [8]u8, const len: usize = blk: {
+            var temp_down: [8]u8 = undefined;
+            var i: usize = 0;
+            for (upper_method) |char| {
+                temp_down[i] = std.ascii.toLower(char);
+                i += 1;
             }
-            @field(c, std.fmt.comptimePrint("uws_app_{s}", .{method}))(app.ptr, pattern, handlerWrapper(handler));
-            return app;
-        }
-    } else struct {
-        fn f(app: *const App, pattern: [:0]const u8, handler: c.uws_method_handler) void {
-            if (config.debug_logs) {
-                info(log_str, .{pattern});
+            break :blk .{ temp_down, i };
+        };
+
+        const log_str = std.fmt.comptimePrint(if (useWrapper) "Registering {s} route: " else "Registering raw {s} route: ", .{upper_method}) ++ "{s}";
+
+        return if (useWrapper) struct {
+            fn f(app: *const App, pattern: [:0]const u8, comptime handler: MethodHandler) *const App {
+                if (config.debug_logs) {
+                    info(log_str, .{pattern});
+                }
+                @field(c, "uws_app_" ++ lower_method[0..len])(app.ptr, pattern, handlerWrapper(handler));
+                return app;
             }
-            @field(c, std.fmt.comptimePrint("uws_app_{s}", .{method}))(app.ptr, pattern, handler);
-        }
-    };
+        } else struct {
+            fn f(app: *const App, pattern: [:0]const u8, handler: c.uws_method_handler) void {
+                if (config.debug_logs) {
+                    info(log_str, .{pattern});
+                }
+                @field(c, "uws_app_" ++ lower_method[0..len])(app.ptr, pattern, handler);
+            }
+        };
+    }
 }

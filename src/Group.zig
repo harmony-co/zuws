@@ -1,9 +1,10 @@
 const c = @import("uws");
 const std = @import("std");
 const App = @import("./App.zig");
+const InternalMethod = @import("./internal.zig").InternalMethod;
 
 const ListType = struct {
-    method: App.Method,
+    method: InternalMethod,
     pattern: [:0]const u8,
     handler: c.uws_method_handler,
 };
@@ -12,7 +13,7 @@ const ArrayList = std.ArrayListUnmanaged(ListType);
 
 pub const ComptimeGroup = struct {
     const InternalListType = struct {
-        method: App.Method,
+        method: InternalMethod,
         pattern: [:0]const u8,
         handler: App.MethodHandler,
     };
@@ -66,7 +67,7 @@ pub const ComptimeGroup = struct {
         };
     }
 
-    fn CreateGroupFn(comptime method: App.Method) fn (self: *const ComptimeGroup, comptime pattern: [:0]const u8, handler: App.MethodHandler) callconv(.Inline) *const ComptimeGroup {
+    fn CreateGroupFn(comptime method: InternalMethod) fn (self: *const ComptimeGroup, comptime pattern: [:0]const u8, handler: App.MethodHandler) callconv(.Inline) *const ComptimeGroup {
         return struct {
             inline fn temp(self: *const ComptimeGroup, comptime pattern: [:0]const u8, handler: App.MethodHandler) *const ComptimeGroup {
                 comptime {
@@ -119,7 +120,7 @@ pub const Group = struct {
         self.list.deinit(self.alloc);
     }
 
-    fn CreateGroupFn(comptime method: App.Method) fn (self: *Group, pattern: [:0]const u8, handler: c.uws_method_handler) std.mem.Allocator.Error!void {
+    fn CreateGroupFn(comptime method: InternalMethod) fn (self: *Group, pattern: [:0]const u8, handler: c.uws_method_handler) std.mem.Allocator.Error!void {
         return struct {
             fn temp(self: *Group, pattern: [:0]const u8, handler: c.uws_method_handler) !void {
                 try self.list.append(self.alloc, .{ .method = method, .pattern = pattern, .handler = handler });

@@ -14,18 +14,23 @@ pub fn linkBoringSSL(
         .target = target,
         .optimize = optimize,
     });
-    libfipsmodule.linkLibC();
+
+    libfipsmodule.link_function_sections = true;
+    libfipsmodule.link_data_sections = true;
+    libfipsmodule.link_gc_sections = true;
     libfipsmodule.linkLibCpp();
     libfipsmodule.addIncludePath(boringssl.path("include"));
     libfipsmodule.addCSourceFiles(.{
         .files = fipsmodule_sources,
         .root = boringssl.path(""),
     });
+
     libfipsmodule.addCSourceFiles(.{
         .files = gen_fipsmodule_sources,
         .root = boringssl.path(""),
         .language = .assembly_with_preprocessor,
     });
+
     uSockets.linkLibrary(libfipsmodule);
 
     const libcrypto = b.addStaticLibrary(.{
@@ -33,13 +38,18 @@ pub fn linkBoringSSL(
         .target = target,
         .optimize = optimize,
     });
-    libcrypto.linkLibC();
+
+    libcrypto.link_function_sections = true;
+    libcrypto.link_data_sections = true;
+    libcrypto.link_gc_sections = true;
     libcrypto.linkLibrary(libfipsmodule);
     libcrypto.addIncludePath(boringssl.path("include"));
+
     libcrypto.addCSourceFiles(.{
         .files = crypto_sources,
         .root = boringssl.path(""),
     });
+
     libcrypto.addCSourceFiles(.{
         .files = gen_crypto_sources,
         .root = boringssl.path(""),
@@ -53,15 +63,19 @@ pub fn linkBoringSSL(
         .target = target,
         .optimize = optimize,
     });
-    libssl.linkLibC();
-    libssl.linkLibCpp();
+
+    libssl.link_function_sections = true;
+    libssl.link_data_sections = true;
+    libssl.link_gc_sections = true;
     libssl.linkLibrary(libcrypto);
     libssl.addIncludePath(boringssl.path("include"));
     libssl.installHeadersDirectory(boringssl.path("include"), "", .{});
+
     libssl.addCSourceFiles(.{
         .files = ssl_sources,
         .root = boringssl.path(""),
     });
+
     uSockets.linkLibrary(libssl);
 
     const libdecrepit = b.addStaticLibrary(.{
@@ -69,25 +83,34 @@ pub fn linkBoringSSL(
         .target = target,
         .optimize = optimize,
     });
-    libdecrepit.linkLibC();
+
+    libdecrepit.link_function_sections = true;
+    libdecrepit.link_data_sections = true;
+    libdecrepit.link_gc_sections = true;
     libdecrepit.linkLibrary(libcrypto);
     libdecrepit.linkLibrary(libssl);
     libdecrepit.addIncludePath(boringssl.path("include"));
+
     libdecrepit.addCSourceFiles(.{
         .files = decrepit_sources,
         .root = boringssl.path(""),
     });
+
     uSockets.linkLibrary(libdecrepit);
 
     const libpki = b.addStaticLibrary(.{
         .name = "pki",
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
     });
-    libpki.linkLibC();
-    libpki.linkLibCpp();
+
+    libpki.link_function_sections = true;
+    libpki.link_data_sections = true;
+    libpki.link_gc_sections = true;
     libpki.linkLibrary(libcrypto);
     libpki.addIncludePath(boringssl.path("include"));
+
     libpki.addCSourceFiles(.{
         .files = pki_sources,
         .root = boringssl.path(""),
@@ -102,11 +125,14 @@ pub fn linkBoringSSL(
             .optimize = optimize,
         }),
     });
-    bssl.linkLibC();
-    bssl.linkLibCpp();
+
+    bssl.link_function_sections = true;
+    bssl.link_data_sections = true;
+    bssl.link_gc_sections = true;
     bssl.linkLibrary(libssl);
     bssl.linkLibrary(libcrypto);
     bssl.addIncludePath(boringssl.path("include"));
+
     bssl.addCSourceFiles(.{
         .files = bssl_sources,
         .root = boringssl.path(""),

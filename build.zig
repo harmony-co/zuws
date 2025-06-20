@@ -19,9 +19,12 @@ pub fn build(b: *std.Build) !void {
         .root_module = b.createModule(.{
             .target = target,
             .optimize = optimize,
-            .link_libc = true,
         }),
     });
+
+    uSockets.link_function_sections = true;
+    uSockets.link_data_sections = true;
+    uSockets.link_gc_sections = true;
 
     if (!no_zlib) {
         const zlib_c = b.dependency("zlib", .{});
@@ -34,6 +37,10 @@ pub fn build(b: *std.Build) !void {
                 .link_libc = true,
             }),
         });
+
+        zlib.link_function_sections = true;
+        zlib.link_data_sections = true;
+        zlib.link_gc_sections = true;
 
         zlib.addCSourceFiles(.{
             .root = zlib_c.path(""),
@@ -95,7 +102,6 @@ pub fn build(b: *std.Build) !void {
     });
 
     if (ssl) {
-        uSockets.linkLibCpp();
         try linkBoringSSL(b, uSockets);
         try uSockets_c_files.append("crypto/openssl.c");
     }
@@ -142,6 +148,7 @@ pub fn build(b: *std.Build) !void {
         .linkage = .static,
         .root_module = zuws,
     });
+
     b.installArtifact(libzuws);
 
     const example_step = b.step("example", "Build and run an example.");

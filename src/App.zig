@@ -172,13 +172,13 @@ pub const WebSocketBehavior = struct {
     max_lifetime: u16 = 0,
     upgrade: ?*const fn (res: *Response, req: *Request) void = null,
     open: ?*const fn (ws: *WebSocket) void = null,
-    message: ?*const fn (ws: *WebSocket, message: [:0]const u8, opcode: WebSocket.Opcode) void = null,
-    dropped: ?*const fn (ws: *WebSocket, message: [:0]const u8, opcode: WebSocket.Opcode) void = null,
+    message: ?*const fn (ws: *WebSocket, message: []const u8, opcode: WebSocket.Opcode) void = null,
+    dropped: ?*const fn (ws: *WebSocket, message: []const u8, opcode: WebSocket.Opcode) void = null,
     drain: ?*const fn (ws: *WebSocket) void = null,
-    ping: ?*const fn (ws: *WebSocket, message: [:0]const u8) void = null,
-    pong: ?*const fn (ws: *WebSocket, message: [:0]const u8) void = null,
-    close: ?*const fn (ws: *WebSocket, code: i32, message: [:0]const u8) void = null,
-    subscription: ?*const fn (ws: *WebSocket, topic: [:0]const u8, newNumberOfSubscribers: i32, oldNumberOfSubscribers: i32) void = null,
+    ping: ?*const fn (ws: *WebSocket, message: []const u8) void = null,
+    pong: ?*const fn (ws: *WebSocket, message: []const u8) void = null,
+    close: ?*const fn (ws: *WebSocket, code: i32, message: []const u8) void = null,
+    subscription: ?*const fn (ws: *WebSocket, topic: []const u8, newNumberOfSubscribers: i32, oldNumberOfSubscribers: i32) void = null,
 };
 
 fn upgradeWrapper(handler: *const fn (res: *Response, req: *Request) void) fn (
@@ -214,7 +214,7 @@ fn drainWrapper(handler: *const fn (ws: *WebSocket) void) fn (raw_ws: ?*c.uws_we
     }.drainHandler;
 }
 
-fn messageWrapper(handler: *const fn (ws: *WebSocket, message: [:0]const u8, opcode: WebSocket.Opcode) void) fn (
+fn messageWrapper(handler: *const fn (ws: *WebSocket, message: []const u8, opcode: WebSocket.Opcode) void) fn (
     raw_ws: ?*c.uws_websocket_t,
     message: [*c]const u8,
     length: usize,
@@ -223,21 +223,21 @@ fn messageWrapper(handler: *const fn (ws: *WebSocket, message: [:0]const u8, opc
     return struct {
         fn messageHandler(raw_ws: ?*c.uws_websocket_t, message: [*c]const u8, length: usize, opcode: c.uws_opcode_t) callconv(.c) void {
             var _ws = WebSocket{ .ptr = raw_ws orelse return };
-            handler(&_ws, message[0..length :0], @enumFromInt(opcode));
+            handler(&_ws, message[0..length], @enumFromInt(opcode));
         }
     }.messageHandler;
 }
 
-fn pingWrapper(handler: *const fn (ws: *WebSocket, message: [:0]const u8) void) fn (raw_ws: ?*c.uws_websocket_t, message: [*c]const u8, length: usize) callconv(.c) void {
+fn pingWrapper(handler: *const fn (ws: *WebSocket, message: []const u8) void) fn (raw_ws: ?*c.uws_websocket_t, message: [*c]const u8, length: usize) callconv(.c) void {
     return struct {
         fn pingHandler(raw_ws: ?*c.uws_websocket_t, message: [*c]const u8, length: usize) callconv(.c) void {
             var _ws = WebSocket{ .ptr = raw_ws orelse return };
-            handler(&_ws, message[0..length :0]);
+            handler(&_ws, message[0..length]);
         }
     }.pingHandler;
 }
 
-fn closeWrapper(handler: *const fn (ws: *WebSocket, code: i32, message: [:0]const u8) void) fn (
+fn closeWrapper(handler: *const fn (ws: *WebSocket, code: i32, message: []const u8) void) fn (
     raw_ws: ?*c.uws_websocket_t,
     code: c_int,
     message: [*c]const u8,
@@ -246,12 +246,12 @@ fn closeWrapper(handler: *const fn (ws: *WebSocket, code: i32, message: [:0]cons
     return struct {
         fn closeHandler(raw_ws: ?*c.uws_websocket_t, code: c_int, message: [*c]const u8, length: usize) callconv(.c) void {
             var _ws = WebSocket{ .ptr = raw_ws orelse return };
-            handler(&_ws, code, message[0..length :0]);
+            handler(&_ws, code, message[0..length]);
         }
     }.closeHandler;
 }
 
-fn subscriptionWrapper(handler: *const fn (ws: *WebSocket, topic: [:0]const u8, new_sub_num: i32, old_sub_num: i32) void) fn (
+fn subscriptionWrapper(handler: *const fn (ws: *WebSocket, topic: []const u8, new_sub_num: i32, old_sub_num: i32) void) fn (
     raw_ws: ?*c.uws_websocket_t,
     topic_name: [*c]const u8,
     topic_name_length: usize,
@@ -267,7 +267,7 @@ fn subscriptionWrapper(handler: *const fn (ws: *WebSocket, topic: [:0]const u8, 
             old_number_of_subscriber: c_int,
         ) callconv(.c) void {
             var _ws = WebSocket{ .ptr = raw_ws orelse return };
-            handler(&_ws, topic_name[0..topic_name_length :0], new_number_of_subscriber, old_number_of_subscriber);
+            handler(&_ws, topic_name[0..topic_name_length], new_number_of_subscriber, old_number_of_subscriber);
         }
     }.subscriptionHandler;
 }

@@ -127,8 +127,8 @@ pub fn writeStatusCode(res: *const Response, comptime status: StatusCode) void {
     res.writeStatus(status_text);
 }
 
-pub fn writeHeader(res: *const Response, key: []const u8, value: [:0]const u8) void {
-    c.uws_res_write_header(res.ptr, key.ptr, key.len, value, value.len);
+pub fn writeHeader(res: *const Response, key: []const u8, value: []const u8) void {
+    c.uws_res_write_header(res.ptr, key.ptr, key.len, value.ptr, value.len);
 }
 
 pub fn writeHeaderInt(res: *const Response, key: []const u8, value: u64) void {

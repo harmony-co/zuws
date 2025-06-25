@@ -197,14 +197,14 @@ pub fn getWriteOffset(res: *const Response) u64 {
     return c.uws_res_get_write_offset(res.ptr);
 }
 
-pub fn getRemoteAddress(res: *const Response) [:0]const u8 {
+pub fn getRemoteAddress(res: *const Response) []const u8 {
     var temp: [*c]const u8 = undefined;
     const len = c.uws_res_get_remote_address(res.ptr, &temp);
-    return temp[0..len :0];
+    return temp[0..len];
 }
 
-pub fn getRemoteAddressAsText(res: *const Response) [:0]const u8 {
+pub fn getRemoteAddressAsText(res: *const Response) []const u8 {
     var temp: [*c]const u8 = undefined;
     const len = c.uws_res_get_remote_address_as_text(res.ptr, &temp);
-    return temp[0..len :0];
+    return temp[0..len];
 }

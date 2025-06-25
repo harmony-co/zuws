@@ -1,6 +1,6 @@
 .{
     .name = .zuws,
-    .version = "0.2.0",
+    .version = "0.3.0",
     .fingerprint = 0xde8efae815fc7f4e,
     .minimum_zig_version = "0.14.0",
     .dependencies = .{
@@ -16,9 +16,11 @@
     },
     .paths = .{
         "build.zig",
+        "build.boringssl.zig",
         "build.zig.zon",
         "src",
         "bindings",
         "uWebSockets",
+        "zlib",
     },
 }

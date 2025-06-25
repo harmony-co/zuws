@@ -36,7 +36,7 @@ fn open(ws: *WebSocket) void {
 
 fn on_message(ws: *WebSocket, message: [:0]const u8, opcode: WebSocket.Opcode) void {
     std.debug.print("Message: {any} | {s} | {any}\n", .{ ws, message, opcode });
-    _ = ws.send("zuws", .TEXT);
+    _ = ws.send("zuws", .text);
 }
 
 fn drain(ws: *WebSocket) void {

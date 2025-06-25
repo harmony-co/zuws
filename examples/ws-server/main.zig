@@ -52,7 +52,7 @@ fn pong(ws: *WebSocket, message: []const u8) void {
 }
 
 fn close(ws: *WebSocket, code: i32, message: ?[]const u8) void {
-    std.debug.print("Close: {any} | {any} | {s}\n", .{ ws, code, message });
+    std.debug.print("Close: {any} | {any} | {?s}\n", .{ ws, code, message });
 }
 
 fn subscription(ws: *WebSocket, topic: []const u8, newNumberOfSubscribers: i32, oldNumberOfSubscribers: i32) void {

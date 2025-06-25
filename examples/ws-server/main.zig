@@ -51,7 +51,7 @@ fn pong(ws: *WebSocket, message: []const u8) void {
     std.debug.print("Pong: {any} | {s}\n", .{ ws, message });
 }
 
-fn close(ws: *WebSocket, code: i32, message: []const u8) void {
+fn close(ws: *WebSocket, code: i32, message: ?[]const u8) void {
     std.debug.print("Close: {any} | {any} | {s}\n", .{ ws, code, message });
 }
 

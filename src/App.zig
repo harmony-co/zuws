@@ -14,6 +14,12 @@ const App = @This();
 pub const Group = @import("./Group.zig");
 
 pub const MethodHandler = *const fn (*Response, *Request) void;
+pub const ListenHandler = *const fn (?*ListenSocket) void;
+
+pub const ListenSocket = struct {
+    s: void align(16),
+    socket_ext_size: u32,
+};
 
 ptr: *c.uws_app_t,
 
@@ -47,14 +53,11 @@ pub fn deinit(app: *const App) void {
     c.uws_app_destroy(app.ptr);
 }
 
-/// This also calls `run` and starts the app
-pub fn listen(app: *const App, port: u16, handler: c.uws_listen_handler) !void {
-    const addr = try std.net.Address.parseIp4("127.0.0.1", port);
-    const sock_fd = try std.posix.socket(addr.any.family, std.posix.SOCK.STREAM | std.posix.SOCK.CLOEXEC, std.posix.IPPROTO.TCP);
-    try std.posix.bind(sock_fd, &addr.any, addr.getOsSockLen());
-    std.posix.close(sock_fd);
+pub fn listen(app: *const App, port: u16, comptime handler: ?ListenHandler) void {
+    c.uws_app_listen(app.ptr, port, if (handler) |h| listenWrapper(h) else null);
+}
 
-    c.uws_app_listen(app.ptr, port, handler);
+pub fn run(app: *const App) void {
     c.uws_app_run(app.ptr);
 }
 
@@ -147,6 +150,14 @@ pub fn ws(app: *const App, pattern: [:0]const u8, comptime behavior: WebSocketBe
 
     c.uws_ws(app.ptr, pattern, b);
     return app;
+}
+
+fn listenWrapper(handler: ListenHandler) fn (socket: ?*c.us_listen_socket_t) callconv(.c) void {
+    return struct {
+        fn listenWrapper(socket: ?*c.us_listen_socket_t) callconv(.c) void {
+            handler(@ptrCast(@alignCast(socket)));
+        }
+    }.listenWrapper;
 }
 
 fn handlerWrapper(handler: MethodHandler) fn (raw_res: ?*c.uws_res_s, raw_req: ?*c.uws_req_s) callconv(.c) void {

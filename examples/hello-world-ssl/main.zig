@@ -17,5 +17,6 @@ pub fn main() !void {
         }
     }.f);
 
-    try app.listen(3000, null);
+    app.listen(3000, null);
+    app.run();
 }

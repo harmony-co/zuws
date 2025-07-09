@@ -22,7 +22,8 @@ pub fn main() !void {
             .subscription = subscription,
         });
 
-    try app.listen(3000, null);
+    app.listen(3000, null);
+    app.run();
 }
 
 fn upgrade(res: *Response, req: *Request) void {

@@ -20,7 +20,8 @@ pub fn main() !void {
 
     app.comptimeGroup(api);
 
-    try app.listen(3000, null);
+    app.listen(3000, null);
+    app.run();
 }
 
 fn helloWorld(res: *Response, _: *Request) void {

@@ -6,6 +6,7 @@ pub fn build(b: *std.Build) !void {
     const optimize = b.standardOptimizeOption(.{});
 
     const debug_logs = b.option(bool, "debug_logs", "Whether to enable debug logs for route creation.") orelse (optimize == .Debug);
+    const with_proxy = b.option(bool, "with_proxy", "Wether to enable PROXY Protocol v2 support.") orelse false;
     const no_zlib = b.option(bool, "no_zlib", "Wether to disable per-message deflate.") orelse false;
     const ssl = b.option(bool, "ssl", "Whether to enable SSL.") orelse false;
 
@@ -115,11 +116,12 @@ pub fn build(b: *std.Build) !void {
 
     uws.defineCMacro("ZUWS_USE_SSL", if (ssl) "1" else "0");
 
-    var uws_flags = try std.ArrayList([]const u8).initCapacity(b.allocator, 2);
+    var uws_flags = try std.ArrayList([]const u8).initCapacity(b.allocator, 3);
     defer uws_flags.deinit();
 
     if (ssl) try uws_flags.append("-DZUWS_USE_SSL");
     if (no_zlib) try uws_flags.append("-DUWS_NO_ZLIB");
+    if (with_proxy) try uws_flags.append("-DUWS_WITH_PROXY");
 
     const uWebSockets = uws.addModule("uws");
     uWebSockets.link_libcpp = true;

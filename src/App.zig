@@ -49,20 +49,20 @@ fn initNoSSL() !App {
     return error.CouldNotCreateApp;
 }
 
-pub fn deinit(app: *const App) void {
-    c.uws_app_destroy(app.ptr);
+pub fn deinit(self: *const App) void {
+    c.uws_app_destroy(self.ptr);
 }
 
-pub fn listen(app: *const App, port: u16, comptime handler: ?ListenHandler) void {
-    c.uws_app_listen(app.ptr, port, if (handler) |h| listenWrapper(h) else null);
+pub fn listen(self: *const App, port: u16, comptime handler: ?ListenHandler) void {
+    c.uws_app_listen(self.ptr, port, if (handler) |h| listenWrapper(h) else null);
 }
 
-pub fn run(app: *const App) void {
-    c.uws_app_run(app.ptr);
+pub fn run(self: *const App) void {
+    c.uws_app_run(self.ptr);
 }
 
-pub fn close(app: *const App) void {
-    c.uws_app_close(app.ptr);
+pub fn close(self: *const App) void {
+    c.uws_app_close(self.ptr);
 }
 
 pub const get = CreateMethodFn(.GET);
@@ -87,42 +87,42 @@ pub const rawConnect = CreateRawMethodFn(.CONNECT);
 pub const rawTrace = CreateRawMethodFn(.TRACE);
 pub const rawAny = CreateRawMethodFn(.ANY);
 
-pub fn group(app: *const App, g: *Group.Group) !void {
+pub fn group(self: *const App, g: *Group.Group) !void {
     for (g.list.items) |item| {
         const pattern = try std.mem.concatWithSentinel(g.alloc, u8, &.{ g.base_path, item.pattern }, 0);
         switch (item.method) {
-            .GET => app.rawGet(pattern, item.handler),
-            .POST => app.rawPost(pattern, item.handler),
-            .PUT => app.rawPut(pattern, item.handler),
-            .OPTIONS => app.rawOptions(pattern, item.handler),
-            .DELETE => app.rawDel(pattern, item.handler),
-            .PATCH => app.rawPatch(pattern, item.handler),
-            .HEAD => app.rawHead(pattern, item.handler),
-            .CONNECT => app.rawConnect(pattern, item.handler),
-            .TRACE => app.rawTrace(pattern, item.handler),
-            .ANY => app.rawAny(pattern, item.handler),
+            .GET => self.rawGet(pattern, item.handler),
+            .POST => self.rawPost(pattern, item.handler),
+            .PUT => self.rawPut(pattern, item.handler),
+            .OPTIONS => self.rawOptions(pattern, item.handler),
+            .DELETE => self.rawDel(pattern, item.handler),
+            .PATCH => self.rawPatch(pattern, item.handler),
+            .HEAD => self.rawHead(pattern, item.handler),
+            .CONNECT => self.rawConnect(pattern, item.handler),
+            .TRACE => self.rawTrace(pattern, item.handler),
+            .ANY => self.rawAny(pattern, item.handler),
         }
     }
 }
 
-pub inline fn comptimeGroup(app: *const App, g: *const Group.ComptimeGroup) void {
+pub inline fn comptimeGroup(self: *const App, g: *const Group.ComptimeGroup) void {
     inline for (g.list) |item| {
         switch (item.method) {
-            .GET => _ = app.get(g.base_path ++ item.pattern, item.handler),
-            .POST => _ = app.post(g.base_path ++ item.pattern, item.handler),
-            .PUT => _ = app.put(g.base_path ++ item.pattern, item.handler),
-            .OPTIONS => _ = app.options(g.base_path ++ item.pattern, item.handler),
-            .DELETE => _ = app.del(g.base_path ++ item.pattern, item.handler),
-            .PATCH => _ = app.patch(g.base_path ++ item.pattern, item.handler),
-            .HEAD => _ = app.head(g.base_path ++ item.pattern, item.handler),
-            .CONNECT => _ = app.connect(g.base_path ++ item.pattern, item.handler),
-            .TRACE => _ = app.trace(g.base_path ++ item.pattern, item.handler),
-            .ANY => _ = app.any(g.base_path ++ item.pattern, item.handler),
+            .GET => _ = self.get(g.base_path ++ item.pattern, item.handler),
+            .POST => _ = self.post(g.base_path ++ item.pattern, item.handler),
+            .PUT => _ = self.put(g.base_path ++ item.pattern, item.handler),
+            .OPTIONS => _ = self.options(g.base_path ++ item.pattern, item.handler),
+            .DELETE => _ = self.del(g.base_path ++ item.pattern, item.handler),
+            .PATCH => _ = self.patch(g.base_path ++ item.pattern, item.handler),
+            .HEAD => _ = self.head(g.base_path ++ item.pattern, item.handler),
+            .CONNECT => _ = self.connect(g.base_path ++ item.pattern, item.handler),
+            .TRACE => _ = self.trace(g.base_path ++ item.pattern, item.handler),
+            .ANY => _ = self.any(g.base_path ++ item.pattern, item.handler),
         }
     }
 }
 
-pub fn ws(app: *const App, pattern: [:0]const u8, comptime behavior: WebSocketBehavior) *const App {
+pub fn ws(self: *const App, pattern: [:0]const u8, comptime behavior: WebSocketBehavior) *const App {
     if (config.debug_logs) {
         info("Registering WebSocket route: {s}", .{pattern});
     }
@@ -148,8 +148,8 @@ pub fn ws(app: *const App, pattern: [:0]const u8, comptime behavior: WebSocketBe
     if (behavior.close) |f| b.close = closeWrapper(f);
     if (behavior.subscription) |f| b.subscription = subscriptionWrapper(f);
 
-    c.uws_ws(app.ptr, pattern, b);
-    return app;
+    c.uws_ws(self.ptr, pattern, b);
+    return self;
 }
 
 fn listenWrapper(handler: ListenHandler) fn (socket: ?*c.us_listen_socket_t) callconv(.c) void {
@@ -160,11 +160,11 @@ fn listenWrapper(handler: ListenHandler) fn (socket: ?*c.us_listen_socket_t) cal
     }.listenWrapper;
 }
 
-fn handlerWrapper(handler: MethodHandler) fn (raw_res: ?*c.uws_res_s, raw_req: ?*c.uws_req_s) callconv(.c) void {
+fn handlerWrapper(handler: MethodHandler) fn (rs: ?*c.uws_res_s, rq: ?*c.uws_req_s) callconv(.c) void {
     return struct {
-        fn handlerWrapper(raw_res: ?*c.uws_res_s, raw_req: ?*c.uws_req_s) callconv(.c) void {
-            var res = Response{ .ptr = raw_res orelse return };
-            var req = Request{ .ptr = raw_req orelse return };
+        fn handlerWrapper(rs: ?*c.uws_res_s, rq: ?*c.uws_req_s) callconv(.c) void {
+            var res = Response{ .ptr = rs orelse return };
+            var req = Request{ .ptr = rq orelse return };
             handler(&res, &req);
         }
     }.handlerWrapper;
@@ -201,14 +201,14 @@ pub const WebSocketBehavior = struct {
 };
 
 fn upgradeWrapper(handler: UpgradeHandler) fn (
-    raw_res: ?*c.uws_res_s,
-    raw_req: ?*c.uws_req_t,
+    res: ?*c.uws_res_s,
+    req: ?*c.uws_req_t,
     context: ?*c.uws_socket_context_t,
 ) callconv(.c) void {
     return struct {
-        fn upgradeHandler(raw_res: ?*c.uws_res_s, raw_req: ?*c.uws_req_t, context: ?*c.uws_socket_context_t) callconv(.c) void {
-            var res = Response{ .ptr = raw_res orelse return };
-            var req = Request{ .ptr = raw_req orelse return };
+        fn upgradeHandler(rs: ?*c.uws_res_s, rq: ?*c.uws_req_t, context: ?*c.uws_socket_context_t) callconv(.c) void {
+            var res = Response{ .ptr = rs orelse return };
+            var req = Request{ .ptr = rq orelse return };
             handler(&res, &req);
             res.upgrade(&req, context);
         }
@@ -291,8 +291,8 @@ fn subscriptionWrapper(handler: SubscriptionHandler) fn (
     }.subscriptionHandler;
 }
 
-const WrappedMethodFunction = fn (app: *const App, pattern: [:0]const u8, comptime handler: MethodHandler) *const App;
-const RawMethodFunction = fn (app: *const App, pattern: [:0]const u8, handler: c.uws_method_handler) void;
+const WrappedMethodFunction = fn (self: *const App, pattern: [:0]const u8, comptime handler: MethodHandler) *const App;
+const RawMethodFunction = fn (self: *const App, pattern: [:0]const u8, handler: c.uws_method_handler) void;
 
 fn CreateMethodFn(comptime method: InternalMethod) WrappedMethodFunction {
     return InnerMethodFn(method, true).f;
@@ -318,19 +318,19 @@ fn InnerMethodFn(comptime method: InternalMethod, comptime useWrapper: bool) typ
         const log_str = std.fmt.comptimePrint(if (useWrapper) "Registering {s} route: " else "Registering raw {s} route: ", .{upper_method}) ++ "{s}";
 
         return if (useWrapper) struct {
-            fn f(app: *const App, pattern: [:0]const u8, comptime handler: MethodHandler) *const App {
+            fn f(self: *const App, pattern: [:0]const u8, comptime handler: MethodHandler) *const App {
                 if (config.debug_logs) {
                     info(log_str, .{pattern});
                 }
-                @field(c, "uws_app_" ++ lower_method[0..len])(app.ptr, pattern, handlerWrapper(handler));
-                return app;
+                @field(c, "uws_app_" ++ lower_method[0..len])(self.ptr, pattern, handlerWrapper(handler));
+                return self;
             }
         } else struct {
-            fn f(app: *const App, pattern: [:0]const u8, handler: c.uws_method_handler) void {
+            fn f(self: *const App, pattern: [:0]const u8, handler: c.uws_method_handler) void {
                 if (config.debug_logs) {
                     info(log_str, .{pattern});
                 }
-                @field(c, "uws_app_" ++ lower_method[0..len])(app.ptr, pattern, handler);
+                @field(c, "uws_app_" ++ lower_method[0..len])(self.ptr, pattern, handler);
             }
         };
     }

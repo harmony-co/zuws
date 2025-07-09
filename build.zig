@@ -94,11 +94,6 @@ pub fn build(b: *std.Build) !void {
         "udp.c",
         "crypto/sni_tree.cpp",
         "eventing/epoll_kqueue.c",
-        "eventing/gcd.c",
-        "eventing/libuv.c",
-        "io_uring/io_context.c",
-        "io_uring/io_loop.c",
-        "io_uring/io_socket.c",
     });
 
     if (ssl) {

@@ -49,12 +49,12 @@ pub fn main() !void {
     const app: App = try .init();
     defer app.deinit();
 
-    try app.get("/hello", hello)
-        .listen(3000, null);
+    app.get("/hello", hello);
+    app.listen(3000, null);
+    app.run();
 }
 
-fn hello(res: *Response, req: *Request) void {
-    _ = req;
+fn hello(res: *Response, _: *Request) void {
     const str = "Hello World!\n";
     res.end(str, false);
 }

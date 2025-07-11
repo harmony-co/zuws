@@ -1,6 +1,6 @@
 # zuws
 
-Opinionated zig bindings for [`uWebsockets`](https://github.com/uNetworking/uWebSockets).
+Opinionated zig bindings for [`uWebSockets`](https://github.com/uNetworking/uWebSockets).
 
 # Installation
 

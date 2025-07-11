@@ -6,8 +6,8 @@ pub fn build(b: *std.Build) !void {
     const optimize = b.standardOptimizeOption(.{});
 
     const debug_logs = b.option(bool, "debug_logs", "Whether to enable debug logs for route creation.") orelse (optimize == .Debug);
-    const with_proxy = b.option(bool, "with_proxy", "Wether to enable PROXY Protocol v2 support.") orelse false;
-    const no_zlib = b.option(bool, "no_zlib", "Wether to disable per-message deflate.") orelse false;
+    const with_proxy = b.option(bool, "with_proxy", "Whether to enable PROXY Protocol v2 support.") orelse false;
+    const no_zlib = b.option(bool, "no_zlib", "Whether to disable per-message deflate.") orelse false;
     const ssl = b.option(bool, "ssl", "Whether to enable SSL.") orelse false;
 
     const config_options = b.addOptions();

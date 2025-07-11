@@ -1,6 +1,6 @@
 .{
     .name = .zuws,
-    .version = "0.3.0",
+    .version = "0.4.0",
     .fingerprint = 0xde8efae815fc7f4e,
     .minimum_zig_version = "0.14.0",
     .dependencies = .{

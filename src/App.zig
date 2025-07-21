@@ -160,12 +160,10 @@ fn listenWrapper(handler: ListenHandler) fn (socket: ?*c.us_listen_socket_t) cal
     }.listenWrapper;
 }
 
-fn handlerWrapper(handler: MethodHandler) fn (rs: ?*c.uws_res_s, rq: ?*c.uws_req_s) callconv(.c) void {
+fn handlerWrapper(handler: MethodHandler) fn (res: ?*c.uws_res_s, req: ?*c.uws_req_s) callconv(.c) void {
     return struct {
-        fn handlerWrapper(rs: ?*c.uws_res_s, rq: ?*c.uws_req_s) callconv(.c) void {
-            var res = Response{ .ptr = rs orelse return };
-            var req = Request{ .ptr = rq orelse return };
-            handler(&res, &req);
+        fn handlerWrapper(res: ?*c.uws_res_s, req: ?*c.uws_req_s) callconv(.c) void {
+            handler(@ptrCast(@alignCast(res.?)), @ptrCast(@alignCast(req.?)));
         }
     }.handlerWrapper;
 }

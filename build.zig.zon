@@ -4,6 +4,9 @@
     .fingerprint = 0xde8efae815fc7f4e,
     .minimum_zig_version = "0.14.0",
     .dependencies = .{
+        .libuv = .{
+            .path = "libuv",
+        },
         .zlib = .{
             .path = "zlib",
         },

@@ -19,6 +19,7 @@
     },
     .paths = .{
         "build.zig",
+        "build.libuv.zig",
         "build.boringssl.zig",
         "build.zig.zon",
         "src",

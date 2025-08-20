@@ -48,11 +48,10 @@ pub fn linkLibUV(
     }
 
     libuv.addCSourceFiles(.{
-        .files = sources.items,
+        .files = try sources.toOwnedSlice(),
         .root = uv.path(""),
     });
 
-    uSockets.addIncludePath(uv.path("include"));
     uSockets.linkLibrary(libuv);
 }
 

@@ -1,5 +1,6 @@
 const std = @import("std");
 const linkBoringSSL = @import("./build.boringssl.zig").linkBoringSSL;
+const linkLibUV = @import("./build.libuv.zig").linkLibUV;
 
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
@@ -100,8 +101,7 @@ pub fn build(b: *std.Build) !void {
     var us_flags = try std.ArrayList([]const u8).initCapacity(b.allocator, 2);
 
     if (with_uv) {
-        const uv = b.dependency("libuv", .{});
-        uSockets.addIncludePath(uv.path("include"));
+        try linkLibUV(b, uSockets);
         try uSockets_c_files.append("eventing/libuv.c");
         try us_flags.append("-DLIBUS_USE_LIBUV");
     }

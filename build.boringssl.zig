@@ -9,10 +9,13 @@ pub fn linkBoringSSL(
 
     const boringssl = b.dependency("boringssl", .{});
 
-    const libfipsmodule = b.addStaticLibrary(.{
+    const libfipsmodule = b.addLibrary(.{
         .name = "fipsmodule",
-        .target = target,
-        .optimize = optimize,
+        .linkage = .static,
+        .root_module = b.createModule(.{
+            .target = target,
+            .optimize = optimize,
+        }),
     });
 
     libfipsmodule.link_function_sections = true;
@@ -33,10 +36,13 @@ pub fn linkBoringSSL(
 
     uSockets.linkLibrary(libfipsmodule);
 
-    const libcrypto = b.addStaticLibrary(.{
+    const libcrypto = b.addLibrary(.{
         .name = "crypto",
-        .target = target,
-        .optimize = optimize,
+        .linkage = .static,
+        .root_module = b.createModule(.{
+            .target = target,
+            .optimize = optimize,
+        }),
     });
 
     libcrypto.link_function_sections = true;
@@ -58,10 +64,13 @@ pub fn linkBoringSSL(
 
     uSockets.linkLibrary(libcrypto);
 
-    const libssl = b.addStaticLibrary(.{
+    const libssl = b.addLibrary(.{
         .name = "ssl",
-        .target = target,
-        .optimize = optimize,
+        .linkage = .static,
+        .root_module = b.createModule(.{
+            .target = target,
+            .optimize = optimize,
+        }),
     });
 
     libssl.link_function_sections = true;
@@ -78,10 +87,13 @@ pub fn linkBoringSSL(
 
     uSockets.linkLibrary(libssl);
 
-    const libdecrepit = b.addStaticLibrary(.{
+    const libdecrepit = b.addLibrary(.{
         .name = "decrepit",
-        .target = target,
-        .optimize = optimize,
+        .linkage = .static,
+        .root_module = b.createModule(.{
+            .target = target,
+            .optimize = optimize,
+        }),
     });
 
     libdecrepit.link_function_sections = true;
@@ -98,16 +110,19 @@ pub fn linkBoringSSL(
 
     uSockets.linkLibrary(libdecrepit);
 
-    const libpki = b.addStaticLibrary(.{
+    const libpki = b.addLibrary(.{
         .name = "pki",
-        .target = target,
-        .optimize = optimize,
-        .link_libc = true,
+        .linkage = .static,
+        .root_module = b.createModule(.{
+            .target = target,
+            .optimize = optimize,
+        }),
     });
 
     libpki.link_function_sections = true;
     libpki.link_data_sections = true;
     libpki.link_gc_sections = true;
+    libpki.linkLibC();
     libpki.linkLibrary(libcrypto);
     libpki.addIncludePath(boringssl.path("include"));
 

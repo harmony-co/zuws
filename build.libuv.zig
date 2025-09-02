@@ -9,10 +9,13 @@ pub fn linkLibUV(
 
     const uv = b.dependency("libuv", .{});
 
-    const libuv = b.addStaticLibrary(.{
+    const libuv = b.addLibrary(.{
         .name = "uv",
-        .target = target,
-        .optimize = optimize,
+        .root_module = b.createModule(.{
+            .target = target,
+            .optimize = optimize,
+        }),
+        .linkage = .static,
     });
 
     libuv.link_function_sections = true;
@@ -24,31 +27,31 @@ pub fn linkLibUV(
     libuv.addIncludePath(uv.path("include"));
     libuv.addIncludePath(uv.path("include/uv"));
 
-    var sources = std.ArrayList([]const u8).init(b.allocator);
-    try sources.appendSlice(libuv_sources);
+    var sources: std.ArrayList([]const u8) = .empty;
+    try sources.appendSlice(b.allocator, libuv_sources);
 
     if (target.result.os.tag == .windows)
         libuv.addIncludePath(uv.path("src/win"))
     else
         libuv.addIncludePath(uv.path("src/unix"));
 
-    switch (target.result.os.tag) {
-        .windows => try sources.appendSlice(windows_sources),
-        .linux => try sources.appendSlice(linux_sources),
-        .macos, .ios => try sources.appendSlice(darwin_sources),
-        .freebsd => try sources.appendSlice(freebsd_sources),
-        .openbsd => try sources.appendSlice(openbsd_sources),
-        .netbsd => try sources.appendSlice(netbsd_sources),
-        .dragonfly => try sources.appendSlice(dragonfly_sources),
-        .aix => try sources.appendSlice(aix_sources),
-        .haiku => try sources.appendSlice(haiku_sources),
-        .hurd => try sources.appendSlice(hurd_sources),
-        .zos => try sources.appendSlice(zos_sources),
-        else => try sources.appendSlice(unix_sources),
-    }
+    try sources.appendSlice(b.allocator, switch (target.result.os.tag) {
+        .windows => windows_sources,
+        .linux => linux_sources,
+        .macos, .ios => darwin_sources,
+        .freebsd => freebsd_sources,
+        .openbsd => openbsd_sources,
+        .netbsd => netbsd_sources,
+        .dragonfly => dragonfly_sources,
+        .aix => aix_sources,
+        .haiku => haiku_sources,
+        .hurd => hurd_sources,
+        .zos => zos_sources,
+        else => unix_sources,
+    });
 
     libuv.addCSourceFiles(.{
-        .files = try sources.toOwnedSlice(),
+        .files = try sources.toOwnedSlice(b.allocator),
         .root = uv.path(""),
     });
 

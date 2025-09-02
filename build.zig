@@ -86,8 +86,8 @@ pub fn build(b: *std.Build) !void {
     uSockets.addIncludePath(us.path(""));
     uSockets.installHeader(us.path("libusockets.h"), "libusockets.h");
 
-    var uSockets_c_files = std.ArrayList([]const u8).init(b.allocator);
-    try uSockets_c_files.appendSlice(&.{
+    var uSockets_c_files: std.ArrayList([]const u8) = .empty;
+    try uSockets_c_files.appendSlice(b.allocator, &.{
         "bsd.c",
         "context.c",
         "loop.c",
@@ -98,24 +98,24 @@ pub fn build(b: *std.Build) !void {
         "eventing/epoll_kqueue.c",
     });
 
-    var us_flags = try std.ArrayList([]const u8).initCapacity(b.allocator, 2);
+    var us_flags: std.ArrayList([]const u8) = try .initCapacity(b.allocator, 2);
 
     if (with_uv) {
         try linkLibUV(b, uSockets);
-        try uSockets_c_files.append("eventing/libuv.c");
-        try us_flags.append("-DLIBUS_USE_LIBUV");
+        try uSockets_c_files.append(b.allocator, "eventing/libuv.c");
+        try us_flags.append(b.allocator, "-DLIBUS_USE_LIBUV");
     }
 
     if (ssl) {
         try linkBoringSSL(b, uSockets);
-        try uSockets_c_files.append("crypto/openssl.c");
-        try us_flags.append("-DLIBUS_USE_OPENSSL");
-    } else try us_flags.append("-DLIBUS_NO_SSL");
+        try uSockets_c_files.append(b.allocator, "crypto/openssl.c");
+        try us_flags.append(b.allocator, "-DLIBUS_USE_OPENSSL");
+    } else try us_flags.append(b.allocator, "-DLIBUS_NO_SSL");
 
     uSockets.addCSourceFiles(.{
         .root = us.path(""),
-        .files = try uSockets_c_files.toOwnedSlice(),
-        .flags = try us_flags.toOwnedSlice(),
+        .files = try uSockets_c_files.toOwnedSlice(b.allocator),
+        .flags = try us_flags.toOwnedSlice(b.allocator),
     });
 
     const uws = b.addTranslateC(.{
@@ -128,9 +128,9 @@ pub fn build(b: *std.Build) !void {
 
     var uws_flags = try std.ArrayList([]const u8).initCapacity(b.allocator, 4);
 
-    if (ssl) try uws_flags.append("-DZUWS_USE_SSL");
-    if (no_zlib) try uws_flags.append("-DUWS_NO_ZLIB");
-    if (with_proxy) try uws_flags.append("-DUWS_WITH_PROXY");
+    if (ssl) try uws_flags.append(b.allocator, "-DZUWS_USE_SSL");
+    if (no_zlib) try uws_flags.append(b.allocator, "-DUWS_NO_ZLIB");
+    if (with_proxy) try uws_flags.append(b.allocator, "-DUWS_WITH_PROXY");
     //if (target.result.os.tag != .windows) try uws_flags.append("-flto=auto");
 
     const uWebSockets = uws.addModule("uws");
@@ -139,7 +139,7 @@ pub fn build(b: *std.Build) !void {
     uWebSockets.addCSourceFiles(.{
         .root = b.path("bindings/"),
         .files = &.{"uws.cpp"},
-        .flags = try uws_flags.toOwnedSlice(),
+        .flags = try uws_flags.toOwnedSlice(b.allocator),
     });
 
     const zuws = b.addModule("zuws", .{

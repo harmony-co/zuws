@@ -71,7 +71,6 @@ const libuv_sources = &.{
     "src/uv-common.c",
     "src/version.c",
     "src/strtok.c",
-    "src/strtok.h",
 };
 
 const windows_sources = &.{

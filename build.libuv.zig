@@ -11,12 +11,12 @@ pub fn linkLibUV(
 
     const libuv = b.addLibrary(.{
         .name = "uv",
+        .linkage = .static,
         .root_module = b.createModule(.{
             .target = target,
             .optimize = optimize,
             .link_libc = true,
         }),
-        .linkage = .static,
     });
 
     libuv.link_gc_sections = true;
@@ -29,12 +29,6 @@ pub fn linkLibUV(
 
     var sources: std.ArrayList([]const u8) = .empty;
     try sources.appendSlice(b.allocator, libuv_sources);
-
-    if (target.result.os.tag == .windows)
-        libuv.root_module.addIncludePath(uv.path("src/win"))
-    else
-        libuv.root_module.addIncludePath(uv.path("src/unix"));
-
     try sources.appendSlice(b.allocator, switch (target.result.os.tag) {
         .windows => windows_sources,
         .linux => linux_sources,

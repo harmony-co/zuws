@@ -135,6 +135,7 @@ pub fn linkBoringSSL(
 
     const bssl = b.addLibrary(.{
         .name = "bssl",
+        .linkage = .static,
         .root_module = b.createModule(.{
             .target = target,
             .optimize = optimize,

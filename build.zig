@@ -80,10 +80,10 @@ pub fn build(b: *std.Build) !void {
             },
         });
 
-        uSockets.linkLibrary(zlib);
+        uSockets.root_module.linkLibrary(zlib);
     }
 
-    uSockets.addIncludePath(us.path(""));
+    uSockets.root_module.addIncludePath(us.path(""));
     uSockets.installHeader(us.path("libusockets.h"), "libusockets.h");
 
     var uSockets_c_files: std.ArrayList([]const u8) = .empty;
@@ -112,7 +112,7 @@ pub fn build(b: *std.Build) !void {
         try us_flags.append(b.allocator, "-DLIBUS_USE_OPENSSL");
     } else try us_flags.append(b.allocator, "-DLIBUS_NO_SSL");
 
-    uSockets.addCSourceFiles(.{
+    uSockets.root_module.addCSourceFiles(.{
         .root = us.path(""),
         .files = try uSockets_c_files.toOwnedSlice(b.allocator),
         .flags = try us_flags.toOwnedSlice(b.allocator),

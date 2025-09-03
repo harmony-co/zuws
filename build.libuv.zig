@@ -14,26 +14,26 @@ pub fn linkLibUV(
         .root_module = b.createModule(.{
             .target = target,
             .optimize = optimize,
+            .link_libc = true,
         }),
         .linkage = .static,
     });
 
-    libuv.link_function_sections = true;
-    libuv.link_data_sections = true;
     libuv.link_gc_sections = true;
-    libuv.linkLibC();
+    libuv.link_data_sections = true;
+    libuv.link_function_sections = true;
 
-    libuv.addIncludePath(uv.path("src"));
-    libuv.addIncludePath(uv.path("include"));
-    libuv.addIncludePath(uv.path("include/uv"));
+    libuv.root_module.addIncludePath(uv.path("src"));
+    libuv.root_module.addIncludePath(uv.path("include"));
+    libuv.root_module.addIncludePath(uv.path("include/uv"));
 
     var sources: std.ArrayList([]const u8) = .empty;
     try sources.appendSlice(b.allocator, libuv_sources);
 
     if (target.result.os.tag == .windows)
-        libuv.addIncludePath(uv.path("src/win"))
+        libuv.root_module.addIncludePath(uv.path("src/win"))
     else
-        libuv.addIncludePath(uv.path("src/unix"));
+        libuv.root_module.addIncludePath(uv.path("src/unix"));
 
     try sources.appendSlice(b.allocator, switch (target.result.os.tag) {
         .windows => windows_sources,
@@ -50,12 +50,12 @@ pub fn linkLibUV(
         else => unix_sources,
     });
 
-    libuv.addCSourceFiles(.{
+    libuv.root_module.addCSourceFiles(.{
         .files = try sources.toOwnedSlice(b.allocator),
         .root = uv.path(""),
     });
 
-    uSockets.linkLibrary(libuv);
+    uSockets.root_module.linkLibrary(libuv);
 }
 
 const libuv_sources = &.{

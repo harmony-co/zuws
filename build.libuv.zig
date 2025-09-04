@@ -25,24 +25,55 @@ pub fn linkLibUV(
 
     libuv.root_module.addIncludePath(uv.path("src"));
     libuv.root_module.addIncludePath(uv.path("include"));
-    libuv.root_module.addIncludePath(uv.path("include/uv"));
+
+    libuv.installHeadersDirectory(uv.path("include"), "", .{
+        .include_extensions = &.{ "uv.h", "uv/errno.h", "uv/version.h", "uv/threadpool.h" },
+    });
 
     var sources: std.ArrayList([]const u8) = .empty;
     try sources.appendSlice(b.allocator, libuv_sources);
-    try sources.appendSlice(b.allocator, switch (target.result.os.tag) {
-        .windows => windows_sources,
-        .linux => linux_sources,
-        .macos, .ios => darwin_sources,
-        .freebsd => freebsd_sources,
-        .openbsd => openbsd_sources,
-        .netbsd => netbsd_sources,
-        .dragonfly => dragonfly_sources,
-        .aix => aix_sources,
-        .haiku => haiku_sources,
-        .hurd => hurd_sources,
-        .zos => zos_sources,
-        else => unix_sources,
-    });
+
+    if (target.result.os.tag == .windows) {
+        libuv.root_module.addIncludePath(uv.path("src/win"));
+        libuv.installHeadersDirectory(uv.path("include"), "", .{
+            .include_extensions = &.{ "uv/win.h", "uv/tree.h" },
+        });
+         try sources.appendSlice(b.allocator, windows_sources);
+    } else {
+        libuv.root_module.addIncludePath(uv.path("src/unix"));
+        libuv.installHeadersDirectory(uv.path("include"), "", .{
+            .include_extensions = &.{ "uv/unix.h" },
+        });
+        libuv.installHeadersDirectory(uv.path("include"), "", .{
+            .include_extensions = switch (target.result.os.tag) {
+                .linux => &.{"uv/linux.h"},
+                .macos => &.{"uv/darwin.h"},
+                .freebsd => &.{"uv/bsd.h"},
+                .openbsd => &.{"uv/bsd.h"},
+                .netbsd => &.{"uv/bsd.h"},
+                .dragonfly => &.{"uv/bsd.h"},
+                .aix => &.{"uv/aix.h"},
+                .haiku => &.{"uv/posix.h"},
+                .hurd => &.{"uv/posix.h"},
+                else => unreachable,
+            },
+        });
+        try sources.appendSlice(b.allocator, unix_sources);
+        try sources.appendSlice(b.allocator, switch (target.result.os.tag) {
+            .linux => linux_sources,
+            .macos => darwin_sources,
+            .freebsd => freebsd_sources,
+            .openbsd => openbsd_sources,
+            .netbsd => netbsd_sources,
+            .dragonfly => dragonfly_sources,
+            .aix => aix_sources,
+            .haiku => haiku_sources,
+            .hurd => hurd_sources,
+            .zos => zos_sources,
+            else => unreachable,
+            });
+    }
+
 
     libuv.root_module.addCSourceFiles(.{
         .files = try sources.toOwnedSlice(b.allocator),

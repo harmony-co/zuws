@@ -38,11 +38,11 @@ pub fn linkLibUV(
         libuv.installHeadersDirectory(uv.path("include"), "", .{
             .include_extensions = &.{ "uv/win.h", "uv/tree.h" },
         });
-         try sources.appendSlice(b.allocator, windows_sources);
+        try sources.appendSlice(b.allocator, windows_sources);
     } else {
         libuv.root_module.addIncludePath(uv.path("src/unix"));
         libuv.installHeadersDirectory(uv.path("include"), "", .{
-            .include_extensions = &.{ "uv/unix.h" },
+            .include_extensions = &.{"uv/unix.h"},
         });
         libuv.installHeadersDirectory(uv.path("include"), "", .{
             .include_extensions = switch (target.result.os.tag) {
@@ -71,9 +71,8 @@ pub fn linkLibUV(
             .hurd => hurd_sources,
             .zos => zos_sources,
             else => unreachable,
-            });
+        });
     }
-
 
     libuv.root_module.addCSourceFiles(.{
         .files = try sources.toOwnedSlice(b.allocator),

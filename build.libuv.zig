@@ -55,6 +55,7 @@ pub fn linkLibUV(
                 .aix => &.{"uv/aix.h"},
                 .haiku => &.{"uv/posix.h"},
                 .hurd => &.{"uv/posix.h"},
+                .zos => &.{},
                 else => unreachable,
             },
         });

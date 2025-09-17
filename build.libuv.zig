@@ -78,6 +78,32 @@ pub fn linkLibUV(
     libuv.root_module.addCSourceFiles(.{
         .files = try sources.toOwnedSlice(b.allocator),
         .root = uv.path(""),
+        .flags = switch (target.result.os.tag) {
+            .linux => &.{"-D_GNU_SOURCE"},
+            .haiku => &.{"-D_BSD_SOURCE"},
+            .macos => &.{
+                "-D_DARWIN_USE_64_BIT_INODE=1",
+                "-D_DARWIN_UNLIMITED_SELECT=1"
+            },
+            .zos => &.{
+                "-D_UNIX03_THREADS",
+                "-D_UNIX03_SOURCE",
+                "-D_OPEN_SYS_IF_EXT=1",
+                "-D_OPEN_MSGQ_EXT",
+                "-D_XOPEN_SOURCE_EXTENDED",
+                "-D_ALL_SOURCE",
+                "-D_LARGE_TIME_API",
+                "-D_OPEN_SYS_SOCK_EXT3",
+                "-D_OPEN_SYS_SOCK_IPV6",
+                "-D_OPEN_SYS_FILE_EXT",
+                "-DUV_PLATFORM_SEM_T=int",
+                "-DPATH_MAX=255",
+                "-qCHARS=signed",
+                "-qXPLINK",
+                "-qFLOAT=IEEE",
+            },
+            else => &.{},
+        },
     });
 
     uSockets.root_module.linkLibrary(libuv);

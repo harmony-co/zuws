@@ -1,6 +1,6 @@
 const std = @import("std");
-const linkBoringSSL = @import("./build.boringssl.zig").linkBoringSSL;
 const linkLibUV = @import("./build.libuv.zig").linkLibUV;
+const linkBoringSSL = @import("./build.boringssl.zig").linkBoringSSL;
 
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
@@ -8,7 +8,7 @@ pub fn build(b: *std.Build) !void {
 
     const debug_logs = b.option(bool, "debug_logs", "Whether to enable debug logs for route creation.") orelse (optimize == .Debug);
     const with_proxy = b.option(bool, "with_proxy", "Whether to enable PROXY Protocol v2 support.") orelse false;
-    const with_uv = b.option(bool, "with_uv", "Whether to compile using LIBUV as event-loop.") orelse false;
+    const with_uv = b.option(bool, "with_uv", "Whether to compile using LIBUV as the event-loop.") orelse false;
     const no_zlib = b.option(bool, "no_zlib", "Whether to disable per-message deflate.") orelse false;
     const ssl = b.option(bool, "ssl", "Whether to enable SSL.") orelse false;
 

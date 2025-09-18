@@ -83,7 +83,7 @@ pub fn linkLibUV(
             .haiku => &.{"-D_BSD_SOURCE"},
             .macos => &.{
                 "-D_DARWIN_USE_64_BIT_INODE=1",
-                "-D_DARWIN_UNLIMITED_SELECT=1"
+                "-D_DARWIN_UNLIMITED_SELECT=1",
             },
             .zos => &.{
                 "-D_UNIX03_THREADS",

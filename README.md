@@ -30,6 +30,7 @@ const zuws = b.dependency("zuws", .{
     .ssl = false,
     .no_zlib = false,
     .with_proxy = false,
+    .with_uv = false,
 });
 
 exe.root_module.addImport("zuws", zuws.module("zuws"));

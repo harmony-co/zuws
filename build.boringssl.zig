@@ -9,117 +9,133 @@ pub fn linkBoringSSL(
 
     const boringssl = b.dependency("boringssl", .{});
 
-    const libfipsmodule = b.addStaticLibrary(.{
+    const libfipsmodule = b.addLibrary(.{
         .name = "fipsmodule",
-        .target = target,
-        .optimize = optimize,
+        .linkage = .static,
+        .root_module = b.createModule(.{
+            .target = target,
+            .optimize = optimize,
+            .link_libcpp = true,
+        }),
     });
 
     libfipsmodule.link_function_sections = true;
     libfipsmodule.link_data_sections = true;
     libfipsmodule.link_gc_sections = true;
-    libfipsmodule.linkLibCpp();
-    libfipsmodule.addIncludePath(boringssl.path("include"));
-    libfipsmodule.addCSourceFiles(.{
+    libfipsmodule.root_module.addIncludePath(boringssl.path("include"));
+    libfipsmodule.root_module.addCSourceFiles(.{
         .files = fipsmodule_sources,
         .root = boringssl.path(""),
     });
 
-    libfipsmodule.addCSourceFiles(.{
+    libfipsmodule.root_module.addCSourceFiles(.{
         .files = gen_fipsmodule_sources,
         .root = boringssl.path(""),
         .language = .assembly_with_preprocessor,
     });
 
-    uSockets.linkLibrary(libfipsmodule);
+    uSockets.root_module.linkLibrary(libfipsmodule);
 
-    const libcrypto = b.addStaticLibrary(.{
+    const libcrypto = b.addLibrary(.{
         .name = "crypto",
-        .target = target,
-        .optimize = optimize,
+        .linkage = .static,
+        .root_module = b.createModule(.{
+            .target = target,
+            .optimize = optimize,
+        }),
     });
 
     libcrypto.link_function_sections = true;
     libcrypto.link_data_sections = true;
     libcrypto.link_gc_sections = true;
-    libcrypto.linkLibrary(libfipsmodule);
-    libcrypto.addIncludePath(boringssl.path("include"));
+    libcrypto.root_module.linkLibrary(libfipsmodule);
+    libcrypto.root_module.addIncludePath(boringssl.path("include"));
 
-    libcrypto.addCSourceFiles(.{
+    libcrypto.root_module.addCSourceFiles(.{
         .files = crypto_sources,
         .root = boringssl.path(""),
     });
 
-    libcrypto.addCSourceFiles(.{
+    libcrypto.root_module.addCSourceFiles(.{
         .files = gen_crypto_sources,
         .root = boringssl.path(""),
         .language = .assembly_with_preprocessor,
     });
 
-    uSockets.linkLibrary(libcrypto);
+    uSockets.root_module.linkLibrary(libcrypto);
 
-    const libssl = b.addStaticLibrary(.{
+    const libssl = b.addLibrary(.{
         .name = "ssl",
-        .target = target,
-        .optimize = optimize,
+        .linkage = .static,
+        .root_module = b.createModule(.{
+            .target = target,
+            .optimize = optimize,
+        }),
     });
 
     libssl.link_function_sections = true;
     libssl.link_data_sections = true;
     libssl.link_gc_sections = true;
-    libssl.linkLibrary(libcrypto);
-    libssl.addIncludePath(boringssl.path("include"));
+    libssl.root_module.linkLibrary(libcrypto);
+    libssl.root_module.addIncludePath(boringssl.path("include"));
     libssl.installHeadersDirectory(boringssl.path("include"), "", .{});
 
-    libssl.addCSourceFiles(.{
+    libssl.root_module.addCSourceFiles(.{
         .files = ssl_sources,
         .root = boringssl.path(""),
     });
 
-    uSockets.linkLibrary(libssl);
+    uSockets.root_module.linkLibrary(libssl);
 
-    const libdecrepit = b.addStaticLibrary(.{
+    const libdecrepit = b.addLibrary(.{
         .name = "decrepit",
-        .target = target,
-        .optimize = optimize,
+        .linkage = .static,
+        .root_module = b.createModule(.{
+            .target = target,
+            .optimize = optimize,
+        }),
     });
 
     libdecrepit.link_function_sections = true;
     libdecrepit.link_data_sections = true;
     libdecrepit.link_gc_sections = true;
-    libdecrepit.linkLibrary(libcrypto);
-    libdecrepit.linkLibrary(libssl);
-    libdecrepit.addIncludePath(boringssl.path("include"));
+    libdecrepit.root_module.linkLibrary(libcrypto);
+    libdecrepit.root_module.linkLibrary(libssl);
+    libdecrepit.root_module.addIncludePath(boringssl.path("include"));
 
-    libdecrepit.addCSourceFiles(.{
+    libdecrepit.root_module.addCSourceFiles(.{
         .files = decrepit_sources,
         .root = boringssl.path(""),
     });
 
-    uSockets.linkLibrary(libdecrepit);
+    uSockets.root_module.linkLibrary(libdecrepit);
 
-    const libpki = b.addStaticLibrary(.{
+    const libpki = b.addLibrary(.{
         .name = "pki",
-        .target = target,
-        .optimize = optimize,
-        .link_libc = true,
+        .linkage = .static,
+        .root_module = b.createModule(.{
+            .target = target,
+            .optimize = optimize,
+            .link_libc = true,
+        }),
     });
 
     libpki.link_function_sections = true;
     libpki.link_data_sections = true;
     libpki.link_gc_sections = true;
-    libpki.linkLibrary(libcrypto);
-    libpki.addIncludePath(boringssl.path("include"));
+    libpki.root_module.linkLibrary(libcrypto);
+    libpki.root_module.addIncludePath(boringssl.path("include"));
 
-    libpki.addCSourceFiles(.{
+    libpki.root_module.addCSourceFiles(.{
         .files = pki_sources,
         .root = boringssl.path(""),
     });
 
-    uSockets.linkLibrary(libpki);
+    uSockets.root_module.linkLibrary(libpki);
 
     const bssl = b.addLibrary(.{
         .name = "bssl",
+        .linkage = .static,
         .root_module = b.createModule(.{
             .target = target,
             .optimize = optimize,
@@ -129,16 +145,16 @@ pub fn linkBoringSSL(
     bssl.link_function_sections = true;
     bssl.link_data_sections = true;
     bssl.link_gc_sections = true;
-    bssl.linkLibrary(libssl);
-    bssl.linkLibrary(libcrypto);
-    bssl.addIncludePath(boringssl.path("include"));
+    bssl.root_module.linkLibrary(libssl);
+    bssl.root_module.linkLibrary(libcrypto);
+    bssl.root_module.addIncludePath(boringssl.path("include"));
 
-    bssl.addCSourceFiles(.{
+    bssl.root_module.addCSourceFiles(.{
         .files = bssl_sources,
         .root = boringssl.path(""),
     });
 
-    uSockets.linkLibrary(bssl);
+    uSockets.root_module.linkLibrary(bssl);
 }
 
 const pki_sources = &.{

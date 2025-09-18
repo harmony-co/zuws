@@ -67,7 +67,7 @@ pub const ComptimeGroup = struct {
         };
     }
 
-    fn CreateGroupFn(comptime method: InternalMethod) fn (self: *const ComptimeGroup, comptime pattern: [:0]const u8, handler: App.MethodHandler) callconv(.Inline) *const ComptimeGroup {
+    fn CreateGroupFn(comptime method: InternalMethod) fn (self: *const ComptimeGroup, comptime pattern: [:0]const u8, handler: App.MethodHandler) callconv(.@"inline") *const ComptimeGroup {
         return struct {
             inline fn temp(self: *const ComptimeGroup, comptime pattern: [:0]const u8, handler: App.MethodHandler) *const ComptimeGroup {
                 comptime {

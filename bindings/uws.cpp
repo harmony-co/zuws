@@ -137,10 +137,10 @@ void uws_res_on_aborted(uws_res_t *res, uws_res_on_aborted_handler handler)
                                                   { handler(res); });
 }
 
-void uws_res_on_data(uws_res_t *res, uws_res_on_data_handler handler)
+void uws_res_on_data(uws_res_t *res, void *ctx, uws_res_on_data_handler handler)
 {
-    ((uWS::HttpResponse<IS_SSL> *)res)->onData([handler, res](auto chunk, bool is_end)
-                                               { handler(res, chunk.data(), chunk.length(), is_end); });
+    ((uWS::HttpResponse<IS_SSL> *)res)->onData([res, ctx, handler](auto chunk, bool is_end)
+                                               { handler(res, ctx, chunk.data(), chunk.length(), is_end); });
 }
 
 void uws_res_upgrade(uws_res_t *res, void *data, const char *sec_web_socket_key, size_t sec_web_socket_key_length, const char *sec_web_socket_protocol, size_t sec_web_socket_protocol_length, const char *sec_web_socket_extensions, size_t sec_web_socket_extensions_length, uws_socket_context_t *ws)

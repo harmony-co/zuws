@@ -97,10 +97,11 @@ pub fn end(self: *const Response, data: []const u8, close_connection: bool) void
     c.uws_res_end(self.ptr, data.ptr, data.len, close_connection);
 }
 
-pub fn cork(self: *const Response, callback: fn (Response) void) void {
+pub fn cork(self: *const Response, callback: fn (*Response) void) void {
     const callbackWrapper = struct {
         fn cW(uws_res: ?*const c.uws_res_t) callconv(.c) void {
-            callback(Response{ .ptr = @constCast(uws_res) orelse return });
+            var res = Response{ .ptr = @constCast(uws_res) orelse return };
+            callback(&res);
         }
     }.cW;
     c.uws_res_cork(self.ptr, callbackWrapper);
@@ -165,12 +166,13 @@ pub fn onAborted(self: *const Response, handler: c.uws_res_on_aborted_handler) v
     c.uws_res_on_aborted(self.ptr, handler);
 }
 
-const OnDataCallback = fn (Response, *anyopaque, []const u8, bool) void;
+const OnDataCallback = fn (*Response, *anyopaque, []const u8, bool) void;
 
 pub fn onData(self: *const Response, ctx: *anyopaque, callback: OnDataCallback) void {
     const callbackWrapper = struct {
         fn cW(uws_res: ?*c.struct_uws_res_s, uws_ctx: ?*anyopaque, str: [*c]const u8, str_len: usize, finished: bool) callconv(.c) void {
-            callback(Response{ .ptr = @constCast(uws_res) orelse return }, uws_ctx orelse unreachable, str[0..str_len], finished);
+            var res = Response{ .ptr = @constCast(uws_res) orelse return };
+            callback(&res, uws_ctx orelse unreachable, str[0..str_len], finished);
         }
     }.cW;
     c.uws_res_on_data(self.ptr, ctx, callbackWrapper);

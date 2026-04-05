@@ -99,27 +99,6 @@ pub const uWSApp = opaque {
             info("Registering WebSocket route: {s}", .{pattern});
         }
 
-        // var b: c.uws_socket_behavior_t = .{
-        //     .compression = @intFromEnum(behavior.compression),
-        //     .maxPayloadLength = behavior.max_payload_length,
-        //     .idleTimeout = behavior.idle_timeout,
-        //     .maxBackpressure = behavior.max_backpressure,
-        //     .closeOnBackpressureLimit = behavior.close_on_backpressure_limit,
-        //     .resetIdleTimeoutOnSend = behavior.reset_idle_timeout_on_send,
-        //     .sendPingsAutomatically = behavior.send_pings_automatically,
-        //     .maxLifetime = behavior.max_lifetime,
-        // };
-
-        // if (behavior.upgrade) |f| b.upgrade = upgradeWrapper(f);
-        // if (behavior.open) |f| b.open = openWrapper(f);
-        // if (behavior.message) |f| b.message = messageWrapper(f);
-        // if (behavior.dropped) |f| b.dropped = messageWrapper(f);
-        // if (behavior.drain) |f| b.drain = drainWrapper(f);
-        // if (behavior.ping) |f| b.ping = pingWrapper(f);
-        // if (behavior.pong) |f| b.pong = pingWrapper(f);
-        // if (behavior.close) |f| b.close = closeWrapper(f);
-        // if (behavior.subscription) |f| b.subscription = subscriptionWrapper(f);
-
         c.uws_ws(self, pattern, behavior);
         return self;
     }

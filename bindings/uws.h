@@ -79,7 +79,7 @@ extern "C"
     METHOD(any)
 
 #define METHOD(name) \
-    void uws_app_##name(uws_app_t *app, const char *pattern, uws_method_handler handler);
+    uws_app_t *uws_app_##name(uws_app_t *app, const char *pattern, uws_method_handler handler);
     HTTP_METHODS
 #undef METHOD
 

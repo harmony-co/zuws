@@ -1,9 +1,11 @@
 const std = @import("std");
 
-pub const App = @import("./App.zig");
-pub const Request = @import("./Request.zig");
-pub const Response = @import("./Response.zig");
-pub const WebSocket = @import("./WebSocket.zig");
+pub const c = @import("./bindings.zig");
+
+pub const App = @import("./app.zig").uWSApp;
+pub const Request = @import("./request.zig").Request;
+pub const Response = @import("./response.zig").Response;
+pub const WebSocket = @import("./ws.zig").uWSWebSocket;
 
 test "imports" {
     std.testing.refAllDecls(@This());

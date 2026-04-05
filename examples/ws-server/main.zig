@@ -6,7 +6,7 @@ const Response = zuws.Response;
 const WebSocket = zuws.WebSocket;
 
 pub fn main() !void {
-    const app: App = try .init();
+    const app = try App.init();
     defer app.deinit();
 
     _ = app.ws("/ws", .{
@@ -35,7 +35,7 @@ fn open(ws: *WebSocket) void {
     _ = ws.subscribe("NonsensicalTest");
 }
 
-fn on_message(ws: *WebSocket, message: []const u8, opcode: WebSocket.Opcode) void {
+fn on_message(ws: *WebSocket, message: []const u8, opcode: zuws.c.Opcode) void {
     std.debug.print("Message: {any} | {s} | {any}\n", .{ ws, message, opcode });
     _ = ws.send("zuws", .text);
 }

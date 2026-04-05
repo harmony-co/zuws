@@ -1,6 +1,7 @@
-const c = @import("uws");
 const std = @import("std");
-const App = @import("./App.zig");
+const c = @import("./bindings.zig");
+
+const App = @import("./app.zig").uWSApp;
 const InternalMethod = @import("./internal.zig").InternalMethod;
 
 const ListType = struct {
@@ -15,7 +16,7 @@ pub const ComptimeGroup = struct {
     const InternalListType = struct {
         method: InternalMethod,
         pattern: [:0]const u8,
-        handler: App.MethodHandler,
+        handler: c.MethodHandler,
     };
 
     base_path: [:0]const u8,
@@ -67,9 +68,9 @@ pub const ComptimeGroup = struct {
         };
     }
 
-    fn CreateGroupFn(comptime method: InternalMethod) fn (self: *const ComptimeGroup, comptime pattern: [:0]const u8, handler: App.MethodHandler) callconv(.@"inline") *const ComptimeGroup {
+    fn CreateGroupFn(comptime method: InternalMethod) fn (self: *const ComptimeGroup, comptime pattern: [:0]const u8, handler: c.MethodHandler) callconv(.@"inline") *const ComptimeGroup {
         return struct {
-            inline fn temp(self: *const ComptimeGroup, comptime pattern: [:0]const u8, handler: App.MethodHandler) *const ComptimeGroup {
+            inline fn temp(self: *const ComptimeGroup, comptime pattern: [:0]const u8, handler: c.MethodHandler) *const ComptimeGroup {
                 comptime {
                     var s = @constCast(self);
                     s.list = s.list ++ .{InternalListType{ .method = method, .pattern = pattern, .handler = handler }};

@@ -1,5 +1,5 @@
 const std = @import("std");
-const Method = @import("./App.zig").Method;
+const Method = @import("./app.zig").Method;
 
 pub const InternalMethod = blk: {
     const fields = std.meta.fields(Method);

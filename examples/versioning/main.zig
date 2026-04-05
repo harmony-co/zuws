@@ -4,7 +4,7 @@ const Request = zuws.Request;
 const Response = zuws.Response;
 
 pub fn main() !void {
-    const app: App = try .init();
+    const app = try App.init();
     defer app.deinit();
 
     const api = App.Group.initComptime("/api");
@@ -24,10 +24,10 @@ pub fn main() !void {
     app.run();
 }
 
-fn helloWorld(res: *Response, _: *Request) void {
+fn helloWorld(res: *Response, _: *Request) callconv(.c) void {
     res.end("Hello World!\n", false);
 }
 
-fn helloWorld2(res: *Response, _: *Request) void {
+fn helloWorld2(res: *Response, _: *Request) callconv(.c) void {
     res.end("Hello World! (The second)\n", false);
 }

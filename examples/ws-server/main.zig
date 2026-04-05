@@ -26,11 +26,11 @@ pub fn main() !void {
     app.run();
 }
 
-fn upgrade(res: *Response, req: *Request) void {
+fn upgrade(res: *Response, req: *Request) callconv(.c) void {
     std.debug.print("Upgrade: {any} | {any}\n", .{ res, req });
 }
 
-fn open(ws: *WebSocket) void {
+fn open(ws: *WebSocket) callconv(.c) void {
     std.debug.print("Open: {any}\n", .{ws});
     _ = ws.subscribe("NonsensicalTest");
 }
@@ -40,7 +40,7 @@ fn on_message(ws: *WebSocket, message: []const u8, opcode: zuws.c.Opcode) void {
     _ = ws.send("zuws", .text);
 }
 
-fn drain(ws: *WebSocket) void {
+fn drain(ws: *WebSocket) callconv(.c) void {
     std.debug.print("Drain: {any}\n", .{ws});
 }
 

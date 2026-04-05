@@ -101,16 +101,46 @@ pub const Status = enum(u8) {
     dropped,
 };
 
-pub const UpgradeHandler = *const fn (*Response, *Request) void;
-pub const OpenHandler = *const fn (ws: *WebSocket) void;
+pub const UpgradeHandler = *const fn (*Response, *Request) callconv(.c) void;
+pub const OpenHandler = *const fn (ws: *WebSocket) callconv(.c) void;
+pub const DrainHandler = *const fn (ws: *WebSocket) callconv(.c) void;
+
+// This callbacks need to be wrapped so strings can be used the zig way
 pub const MessageHandler = *const fn (ws: *WebSocket, message: []const u8, opcode: Opcode) void;
-pub const DrainHandler = *const fn (ws: *WebSocket) void;
+pub const uws_websocket_message = *const fn (*WebSocket, [*c]const u8, usize, c.uws_opcode_t) callconv(.c) void;
+
 pub const PingPongHandler = *const fn (ws: *WebSocket, message: []const u8) void;
+pub const uws_websocket_ping_pong = *const fn (*WebSocket, [*c]const u8, usize) callconv(.c) void;
+
 pub const CloseHandler = *const fn (ws: *WebSocket, code: i32, message: ?[]const u8) void;
+pub const uws_websocket_close = *const fn (*WebSocket, c_int, [*c]const u8, usize) callconv(.c) void;
+
 pub const SubscriptionHandler = *const fn (ws: *WebSocket, topic: []const u8, new_sub_num: i32, old_sub_num: i32) void;
+pub const uws_websocket_subscription = *const fn (*WebSocket, [*c]const u8, usize, c_int, c_int) callconv(.c) void;
 
 // https://github.com/uNetworking/uWebSockets/blob/b9b59b2b164489f3788223fec5821f77f7962d43/src/App.h#L234-L259
 pub const WebSocketBehavior = extern struct {
+    compression: CompressOptions = .disabled,
+    maxPayloadLength: u32 = 16 * 1024,
+    /// In seconds
+    idleTimeout: u16 = 120,
+    maxBackpressure: u32 = 64 * 1024,
+    closeOnBackpressureLimit: bool = false,
+    resetIdleTimeoutOnSend: bool = false,
+    sendPingsAutomatically: bool = true,
+    maxLifetime: u16 = 0,
+    upgrade: ?UpgradeHandler = null,
+    open: ?OpenHandler = null,
+    message: ?uws_websocket_message = null,
+    dropped: ?uws_websocket_message = null,
+    drain: ?DrainHandler = null,
+    ping: ?uws_websocket_ping_pong = null,
+    pong: ?uws_websocket_ping_pong = null,
+    close: ?uws_websocket_close = null,
+    subscription: ?uws_websocket_subscription = null,
+};
+
+pub const WrappedWebSocketBehavior = extern struct {
     compression: CompressOptions = .disabled,
     max_payload_length: u32 = 16 * 1024,
     /// In seconds

@@ -94,12 +94,87 @@ pub const uWSApp = opaque {
         }
     }
 
-    pub fn ws(self: *uWSApp, pattern: [:0]const u8, comptime behavior: c.WebSocketBehavior) *uWSApp {
+    pub fn ws(self: *uWSApp, pattern: [:0]const u8, comptime behavior: c.WrappedWebSocketBehavior) *uWSApp {
         if (comptime config.debug_logs) {
             info("Registering WebSocket route: {s}", .{pattern});
         }
 
-        return c.uws_ws(self, pattern, behavior);
+        var b: c.WebSocketBehavior = .{
+            .compression = behavior.compression,
+            .maxPayloadLength = behavior.max_payload_length,
+            .idleTimeout = behavior.idle_timeout,
+            .maxBackpressure = behavior.max_backpressure,
+            .closeOnBackpressureLimit = behavior.close_on_backpressure_limit,
+            .resetIdleTimeoutOnSend = behavior.reset_idle_timeout_on_send,
+            .sendPingsAutomatically = behavior.send_pings_automatically,
+            .maxLifetime = behavior.max_lifetime,
+            .upgrade = behavior.upgrade,
+            .open = behavior.open,
+            .drain = behavior.drain,
+        };
+
+        if (behavior.message) |f| b.message = messageWrapper(f);
+        if (behavior.dropped) |f| b.dropped = messageWrapper(f);
+        if (behavior.ping) |f| b.ping = pingWrapper(f);
+        if (behavior.pong) |f| b.pong = pingWrapper(f);
+        if (behavior.close) |f| b.close = closeWrapper(f);
+        if (behavior.subscription) |f| b.subscription = subscriptionWrapper(f);
+
+        return c.uws_ws(self, pattern, b);
+    }
+
+    fn messageWrapper(handler: c.MessageHandler) fn (
+        raw_ws: *WebSocket,
+        message: [*c]const u8,
+        length: usize,
+        opcode: c_uint,
+    ) callconv(.c) void {
+        return struct {
+            fn messageHandler(raw_ws: *WebSocket, message: [*c]const u8, length: usize, opcode: c_uint) callconv(.c) void {
+                handler(raw_ws, message[0..length], @enumFromInt(opcode));
+            }
+        }.messageHandler;
+    }
+
+    fn pingWrapper(handler: c.PingPongHandler) fn (raw_ws: *WebSocket, message: [*c]const u8, length: usize) callconv(.c) void {
+        return struct {
+            fn pingHandler(raw_ws: *WebSocket, message: [*c]const u8, length: usize) callconv(.c) void {
+                handler(raw_ws, message[0..length]);
+            }
+        }.pingHandler;
+    }
+
+    fn closeWrapper(handler: c.CloseHandler) fn (
+        raw_ws: *WebSocket,
+        code: c_int,
+        message: [*c]const u8,
+        length: usize,
+    ) callconv(.c) void {
+        return struct {
+            fn closeHandler(raw_ws: *WebSocket, code: c_int, message: [*c]const u8, length: usize) callconv(.c) void {
+                handler(raw_ws, code, if (length > 0) message[0..length] else null);
+            }
+        }.closeHandler;
+    }
+
+    fn subscriptionWrapper(handler: c.SubscriptionHandler) fn (
+        raw_ws: *WebSocket,
+        topic_name: [*c]const u8,
+        topic_name_length: usize,
+        new_number_of_subscriber: c_int,
+        old_number_of_subscriber: c_int,
+    ) callconv(.c) void {
+        return struct {
+            fn subscriptionHandler(
+                raw_ws: *WebSocket,
+                topic_name: [*c]const u8,
+                topic_name_length: usize,
+                new_number_of_subscriber: c_int,
+                old_number_of_subscriber: c_int,
+            ) callconv(.c) void {
+                handler(raw_ws, topic_name[0..topic_name_length], new_number_of_subscriber, old_number_of_subscriber);
+            }
+        }.subscriptionHandler;
     }
 
     fn AppMethod(comptime method: InternalMethod) fn (self: *uWSApp, pattern: [:0]const u8, handler: c.MethodHandler) *uWSApp {

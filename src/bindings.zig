@@ -131,7 +131,7 @@ pub const WebSocketBehavior = extern struct {
     subscription: ?SubscriptionHandler = null,
 };
 
-pub extern fn uws_ws(app: *uWSApp, pattern: [*c]const u8, behavior: WebSocketBehavior) void;
+pub extern fn uws_ws(app: *uWSApp, pattern: [*c]const u8, behavior: WebSocketBehavior) *uWSApp;
 pub extern fn uws_ws_close(ws: *WebSocket) void;
 pub extern fn uws_ws_send(ws: *WebSocket, message: [*c]const u8, length: usize, opcode: c.uws_opcode_t) c.uws_sendstatus_t;
 pub extern fn uws_ws_send_with_options(ws: *WebSocket, message: [*c]const u8, length: usize, opcode: c.uws_opcode_t, compress: bool, fin: bool) c.uws_sendstatus_t;

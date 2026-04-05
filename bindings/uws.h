@@ -199,7 +199,7 @@ uws_app_t *uws_create_app();
         uws_websocket_subscription subscription;
     } uws_socket_behavior_t;
 
-    void uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior);
+    uws_app_t *uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior);
     void uws_ws_close(uws_websocket_t *ws);
     uws_sendstatus_t uws_ws_send(uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode);
     uws_sendstatus_t uws_ws_send_with_options(uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode, bool compress, bool fin);

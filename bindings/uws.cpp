@@ -272,7 +272,7 @@ size_t uws_req_get_parameter_index(uws_req_t *res, unsigned short index, const c
         generic_handler.field = [handler] lambda_args lambda_body; \
     }
 
-void uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior)
+uws_app_t *uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior)
 {
     auto generic_handler = uWS::TemplatedApp<IS_SSL>::WebSocketBehavior<void *>{
         .compression = (uWS::CompressOptions)(uint64_t)behavior.compression,
@@ -323,6 +323,7 @@ void uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior)
 
     uWS::TemplatedApp<IS_SSL> *uwsApp = (uWS::TemplatedApp<IS_SSL> *)app;
     uwsApp->ws<void *>(pattern, std::move(generic_handler));
+    return app;
 }
 
 void uws_ws_close(uws_websocket_t *ws)

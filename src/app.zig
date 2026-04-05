@@ -32,16 +32,16 @@ pub const uWSApp = opaque {
     pub const run = c.uws_app_run;
     pub const close = c.uws_app_close;
 
-    pub const get = c.uws_app_get;
-    pub const post = c.uws_app_post;
-    pub const put = c.uws_app_put;
-    pub const options = c.uws_app_options;
-    pub const del = c.uws_app_del;
-    pub const patch = c.uws_app_patch;
-    pub const head = c.uws_app_head;
-    pub const connect = c.uws_app_connect;
-    pub const trace = c.uws_app_trace;
-    pub const any = c.uws_app_any;
+    pub const get = AppMethod(.GET);
+    pub const post = AppMethod(.POST);
+    pub const put = AppMethod(.PUT);
+    pub const options = AppMethod(.OPTIONS);
+    pub const del = AppMethod(.DEL);
+    pub const patch = AppMethod(.PATCH);
+    pub const head = AppMethod(.HEAD);
+    pub const connect = AppMethod(.CONNECT);
+    pub const trace = AppMethod(.TRACE);
+    pub const any = AppMethod(.ANY);
 
     fn initSSL(opt: c.struct_us_socket_context_options_t) !*uWSApp {
         const app = c.uws_create_app(opt);
@@ -95,11 +95,37 @@ pub const uWSApp = opaque {
     }
 
     pub fn ws(self: *uWSApp, pattern: [:0]const u8, comptime behavior: c.WebSocketBehavior) *uWSApp {
-        if (config.debug_logs) {
+        if (comptime config.debug_logs) {
             info("Registering WebSocket route: {s}", .{pattern});
         }
 
-        c.uws_ws(self, pattern, behavior);
-        return self;
+        return c.uws_ws(self, pattern, behavior);
+    }
+
+    fn AppMethod(comptime method: InternalMethod) fn (self: *uWSApp, pattern: [:0]const u8, handler: c.MethodHandler) *uWSApp {
+        comptime {
+            const upper_method = @tagName(method);
+            const lower_method: [8]u8, const len: usize = blk: {
+                var temp_down: [8]u8 = undefined;
+                var i: usize = 0;
+                for (upper_method) |char| {
+                    temp_down[i] = std.ascii.toLower(char);
+                    i += 1;
+                }
+                break :blk .{ temp_down, i };
+            };
+
+            const log_str = std.fmt.comptimePrint("Registering {s} route: ", .{upper_method}) ++ "{s}";
+
+            return struct {
+                fn f(self: *uWSApp, pattern: [:0]const u8, handler: c.MethodHandler) *uWSApp {
+                    if (comptime config.debug_logs) {
+                        info(log_str, .{pattern});
+                    }
+
+                    return @field(c, "uws_app_" ++ lower_method[0..len])(self, pattern, handler);
+                }
+            }.f;
+        }
     }
 };

@@ -14,6 +14,7 @@
     uws_app_t *uws_app_##name(uws_app_t *app, const char *pattern, uws_method_handler handler)                                               \
     {                                                                                                                                        \
         ((uWS::TemplatedApp<IS_SSL> *)app)->name(pattern, [handler](auto *res, auto *req) { handler((uws_res_t *)res, (uws_req_t *)req); }); \
+        return app;                                                                                                                          \
     };
 HTTP_METHODS
 #undef METHOD

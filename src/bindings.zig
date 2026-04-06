@@ -101,7 +101,9 @@ pub const Status = enum(u8) {
     dropped,
 };
 
-pub const UpgradeHandler = *const fn (*Response, *Request) callconv(.c) void;
+pub const SocketContext = opaque {};
+
+pub const UpgradeHandler = *const fn (*Response, *Request, *SocketContext) callconv(.c) void;
 pub const OpenHandler = *const fn (ws: *WebSocket) callconv(.c) void;
 pub const DrainHandler = *const fn (ws: *WebSocket) callconv(.c) void;
 

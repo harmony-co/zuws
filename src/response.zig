@@ -162,25 +162,22 @@ pub const Response = opaque {
 
     pub fn upgrade(
         self: *Response,
-        req: *const Request,
-        ws: ?*c.uws_socket_context_t,
+        req: *Request,
+        ws: ?*c.SocketContext,
     ) void {
-        var ws_key: [*c]const u8 = undefined;
-        var ws_protocol: [*c]const u8 = undefined;
-        var ws_extensions: [*c]const u8 = undefined;
-        const ws_key_len = c.uws_req_get_header(req.ptr, "sec-websocket-key", 17, &ws_key);
-        const ws_protocol_len = c.uws_req_get_header(req.ptr, "sec-websocket-protocol", 22, &ws_protocol);
-        const ws_extensions_len = c.uws_req_get_header(req.ptr, "sec-websocket-extensions", 24, &ws_extensions);
+        const ws_key = req.getHeader("sec-websocket-key");
+        const ws_protocol = req.getHeader("sec-websocket-protocol");
+        const ws_extensions = req.getHeader("sec-websocket-extensions");
 
         c.uws_res_upgrade(
             self,
             null,
-            ws_key,
-            ws_key_len,
-            ws_protocol,
-            ws_protocol_len,
-            ws_extensions,
-            ws_extensions_len,
+            ws_key.ptr,
+            ws_key.len,
+            ws_protocol.ptr,
+            ws_protocol.len,
+            ws_extensions.ptr,
+            ws_extensions.len,
             ws,
         );
     }

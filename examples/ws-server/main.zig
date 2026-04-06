@@ -26,8 +26,9 @@ pub fn main() !void {
     app.run();
 }
 
-fn upgrade(res: *Response, req: *Request) callconv(.c) void {
+fn upgrade(res: *Response, req: *Request, ctx: *zuws.c.SocketContext) callconv(.c) void {
     std.debug.print("Upgrade: {any} | {any}\n", .{ res, req });
+    res.upgrade(req, ctx);
 }
 
 fn open(ws: *WebSocket) callconv(.c) void {

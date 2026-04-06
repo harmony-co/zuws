@@ -46,7 +46,7 @@ pub extern fn uws_res_has_responded(res: *Response) bool;
 pub extern fn uws_res_on_writable(res: *Response, handler: c.uws_res_on_writable_handler) void;
 pub extern fn uws_res_on_aborted(res: *Response, handler: c.uws_res_on_aborted_handler) void;
 pub extern fn uws_res_on_data(res: *Response, ctx: ?*anyopaque, handler: c.uws_res_on_data_handler) void;
-pub extern fn uws_res_upgrade(res: *Response, data: ?*anyopaque, sec_web_socket_key: [*c]const u8, sec_web_socket_key_length: usize, sec_web_socket_protocol: [*c]const u8, sec_web_socket_protocol_length: usize, sec_web_socket_extensions: [*c]const u8, sec_web_socket_extensions_length: usize, ws: ?*c.uws_socket_context_t) void;
+pub extern fn uws_res_upgrade(res: *Response, data: ?*anyopaque, sec_web_socket_key: [*c]const u8, sec_web_socket_key_length: usize, sec_web_socket_protocol: [*c]const u8, sec_web_socket_protocol_length: usize, sec_web_socket_extensions: [*c]const u8, sec_web_socket_extensions_length: usize, ws: *SocketContext) void;
 pub extern fn uws_res_try_end(res: *Response, data: [*c]const u8, length: usize, total_size: c.uintmax_t, close_connection: bool) c.uws_try_end_result_t;
 pub extern fn uws_res_get_write_offset(res: *Response) c.uintmax_t;
 pub extern fn uws_res_get_remote_address(res: *Response, dest: [*c][*c]const u8) usize;

@@ -198,8 +198,8 @@ pub const SSLSocketOptions = extern struct {
     key_file_name: [*]const u8,
     cert_file_name: [*]const u8,
     passphrase: [*]const u8,
-    dh_params_file_name: [*]const u8,
-    ca_file_name: [*]const u8,
-    ssl_ciphers: [*]const u8,
-    ssl_prefer_low_memory_usage: c_int,
+    dh_params_file_name: ?[*]const u8 = null,
+    ca_file_name: ?[*]const u8 = null,
+    ssl_ciphers: ?[*]const u8 = null,
+    ssl_prefer_low_memory_usage: c_int = 0,
 };

@@ -13,7 +13,7 @@ pub fn main() !void {
     defer app.deinit();
 
     _ = app.get("/*", struct {
-        fn f(res: *Response, _: *Request) void {
+        fn f(res: *Response, _: *Request) callconv(.c) void {
             res.end("Hello World!\n", false);
         }
     }.f);

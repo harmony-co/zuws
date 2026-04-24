@@ -51,7 +51,7 @@ pub extern fn uws_res_write(res: *Response, data: [*c]const u8, length: usize) b
 pub extern fn uws_res_override_write_offset(res: *Response, offset: u32) void;
 pub extern fn uws_res_has_responded(res: *Response) bool;
 pub extern fn uws_res_on_writable(res: *Response, handler: OnWritableHandler) void;
-pub extern fn uws_res_on_aborted(res: *Response, handler: OnAbortedHandler) void;
+pub extern fn uws_res_on_aborted(res: *Response, handler: ?OnAbortedHandler) void;
 pub extern fn uws_res_on_data(res: *Response, ctx: ?*anyopaque, handler: OnDataHandler) void;
 pub extern fn uws_res_upgrade(res: *Response, data: ?*anyopaque, sec_web_socket_key: [*c]const u8, sec_web_socket_key_length: usize, sec_web_socket_protocol: [*c]const u8, sec_web_socket_protocol_length: usize, sec_web_socket_extensions: [*c]const u8, sec_web_socket_extensions_length: usize, ws: *SocketContext) void;
 pub extern fn uws_res_try_end(res: *Response, data: [*c]const u8, length: usize, total_size: u32, close_connection: bool) TryEndResult;

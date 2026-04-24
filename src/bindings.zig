@@ -33,9 +33,9 @@ pub const TryEndResult = extern struct {
     has_responded: bool,
 };
 
-pub const OnWritableHandler = *fn (*Response, u32) callconv(.c) bool;
-pub const OnAbortedHandler = *fn (*Response) callconv(.c) bool;
-pub const OnDataHandler = *fn (*anyopaque, *Response, [*c]const u8, usize, bool) callconv(.c) bool;
+pub const OnWritableHandler = *const fn (*Response, u32) callconv(.c) bool;
+pub const OnAbortedHandler = *const fn (*Response) callconv(.c) bool;
+pub const OnDataHandler = *const fn (*anyopaque, *Response, [*c]const u8, usize, bool) callconv(.c) bool;
 
 pub extern fn uws_res_close(res: *Response) void;
 pub extern fn uws_res_end(res: *Response, data: [*c]const u8, length: usize, close_connection: bool) void;
@@ -59,7 +59,7 @@ pub extern fn uws_res_get_write_offset(res: *Response) u32;
 pub extern fn uws_res_get_remote_address(res: *Response, dest: [*c][*c]const u8) usize;
 pub extern fn uws_res_get_remote_address_as_text(res: *Response, dest: [*c][*c]const u8) usize;
 
-pub const GetHeadersServerHandler = *fn (*anyopaque, [*c]const u8, usize, [*c]const u8, usize) callconv(.c) bool;
+pub const GetHeadersServerHandler = *const fn (*anyopaque, [*c]const u8, usize, [*c]const u8, usize) callconv(.c) bool;
 
 pub extern fn uws_req_is_ancient(res: *Request) bool;
 pub extern fn uws_req_get_yield(res: *Request) bool;

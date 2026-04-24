@@ -46,7 +46,7 @@ pub fn build(b: *std.Build) !void {
         zlib.link_data_sections = true;
         zlib.link_gc_sections = true;
 
-        zlib.addCSourceFiles(.{
+        zlib.root_module.addCSourceFiles(.{
             .root = zlib_c.path(""),
             .files = &.{
                 "adler32.c",
@@ -172,7 +172,7 @@ pub fn build(b: *std.Build) !void {
     if (b.args) |args| {
         const example_name = args[0];
         const path = try std.fmt.allocPrint(b.allocator, "examples/{s}/main.zig", .{example_name});
-        try std.fs.cwd().access(path, .{});
+        try std.Io.Dir.cwd().access(b.graph.io, path, .{});
 
         const exe = b.addExecutable(.{
             .name = example_name,

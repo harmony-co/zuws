@@ -133,23 +133,21 @@ pub fn build(b: *std.Build) !void {
     if (with_proxy) try uws_flags.append(b.allocator, "-DUWS_WITH_PROXY");
     //if (target.result.os.tag != .windows) try uws_flags.append("-flto=auto");
 
-    const uWebSockets = uws.addModule("uws");
-    uWebSockets.link_libcpp = true;
-    uWebSockets.linkLibrary(uSockets);
-    uWebSockets.addCSourceFiles(.{
+    const zuws = b.addModule("zuws", .{
+        .root_source_file = b.path("src/root.zig"),
+        .target = target,
+        .optimize = optimize,
+        .link_libcpp = true,
+    });
+
+    zuws.addCSourceFiles(.{
         .root = b.path("bindings/"),
         .files = &.{"uws.cpp"},
         .flags = try uws_flags.toOwnedSlice(b.allocator),
     });
 
-    const zuws = b.addModule("zuws", .{
-        .root_source_file = b.path("src/root.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-
+    zuws.linkLibrary(uSockets);
     zuws.addOptions("config", config_options);
-    zuws.addImport("uws", uWebSockets);
     const libzuws = b.addLibrary(.{
         .name = "zuws",
         .linkage = .static,
@@ -183,7 +181,6 @@ pub fn build(b: *std.Build) !void {
             }),
         });
 
-        exe.root_module.addImport("uws", uWebSockets);
         exe.root_module.addImport("zuws", zuws);
         b.installArtifact(exe);
 

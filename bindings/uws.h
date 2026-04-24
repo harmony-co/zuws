@@ -23,38 +23,6 @@ extern "C"
         int options;
     } uws_app_listen_config_t;
 
-    typedef enum
-    {
-        /* These are not actual compression options */
-        _COMPRESSOR_MASK = 0x00FF,
-        _DECOMPRESSOR_MASK = 0x0F00,
-        /* Disabled, shared, shared are "special" values */
-        DISABLED = 0,
-        SHARED_COMPRESSOR = 1,
-        SHARED_DECOMPRESSOR = 1 << 8,
-        /* Highest 4 bits describe decompressor */
-        DEDICATED_DECOMPRESSOR_32KB = 15 << 8,
-        DEDICATED_DECOMPRESSOR_16KB = 14 << 8,
-        DEDICATED_DECOMPRESSOR_8KB = 13 << 8,
-        DEDICATED_DECOMPRESSOR_4KB = 12 << 8,
-        DEDICATED_DECOMPRESSOR_2KB = 11 << 8,
-        DEDICATED_DECOMPRESSOR_1KB = 10 << 8,
-        DEDICATED_DECOMPRESSOR_512B = 9 << 8,
-        /* Same as 32kb */
-        DEDICATED_DECOMPRESSOR = 15 << 8,
-        /* Lowest 8 bit describe compressor */
-        DEDICATED_COMPRESSOR_3KB = 9 << 4 | 1,
-        DEDICATED_COMPRESSOR_4KB = 9 << 4 | 2,
-        DEDICATED_COMPRESSOR_8KB = 10 << 4 | 3,
-        DEDICATED_COMPRESSOR_16KB = 11 << 4 | 4,
-        DEDICATED_COMPRESSOR_32KB = 12 << 4 | 5,
-        DEDICATED_COMPRESSOR_64KB = 13 << 4 | 6,
-        DEDICATED_COMPRESSOR_128KB = 14 << 4 | 7,
-        DEDICATED_COMPRESSOR_256KB = 15 << 4 | 8,
-        /* Same as 256kb */
-        DEDICATED_COMPRESSOR = 15 << 4 | 8
-    } uws_compress_options_t;
-
 #pragma region uWS-App
 
     struct uws_app_s;
@@ -180,7 +148,7 @@ uws_app_t *uws_create_app();
 
     typedef struct
     {
-        uws_compress_options_t compression;
+        uint16_t compression;
         unsigned int maxPayloadLength;
         unsigned short idleTimeout;
         unsigned int maxBackpressure;

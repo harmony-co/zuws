@@ -134,11 +134,11 @@ pub const Response = opaque {
     pub fn upgrade(
         self: *Response,
         req: *Request,
-        ws: ?*c.SocketContext,
-    ) void {
-        const ws_key = req.getHeader("sec-websocket-key");
-        const ws_protocol = req.getHeader("sec-websocket-protocol");
-        const ws_extensions = req.getHeader("sec-websocket-extensions");
+        ws: *c.SocketContext,
+    ) error{MissingHeader}!void {
+        const ws_key = req.getHeader("sec-websocket-key") orelse return error.MissingHeader;
+        const ws_protocol = req.getHeader("sec-websocket-protocol") orelse return error.MissingHeader;
+        const ws_extensions = req.getHeader("sec-websocket-extensions") orelse return error.MissingHeader;
 
         c.uws_res_upgrade(
             self,

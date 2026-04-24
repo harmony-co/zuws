@@ -275,7 +275,7 @@ size_t uws_req_get_parameter_index(uws_req_t *res, unsigned short index, const c
 uws_app_t *uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior)
 {
     auto generic_handler = uWS::TemplatedApp<IS_SSL>::WebSocketBehavior<void *>{
-        .compression = (uWS::CompressOptions)(uint64_t)behavior.compression,
+        .compression = (uWS::CompressOptions)behavior.compression,
         .maxPayloadLength = behavior.maxPayloadLength,
         .idleTimeout = behavior.idleTimeout,
         .maxBackpressure = behavior.maxBackpressure,

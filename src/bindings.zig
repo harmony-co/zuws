@@ -132,14 +132,14 @@ pub const uws_websocket_subscription = *const fn (*WebSocket, [*c]const u8, usiz
 // https://github.com/uNetworking/uWebSockets/blob/b9b59b2b164489f3788223fec5821f77f7962d43/src/App.h#L234-L259
 pub const WebSocketBehavior = extern struct {
     compression: CompressOptions = .disabled,
-    maxPayloadLength: u32 = 16 * 1024,
+    maxPayloadLength: c_uint = 16 * 1024,
     /// In seconds
-    idleTimeout: u16 = 120,
-    maxBackpressure: u32 = 64 * 1024,
+    idleTimeout: c_ushort = 120,
+    maxBackpressure: c_uint = 64 * 1024,
     closeOnBackpressureLimit: bool = false,
     resetIdleTimeoutOnSend: bool = false,
     sendPingsAutomatically: bool = true,
-    maxLifetime: u16 = 0,
+    maxLifetime: c_ushort = 0,
     upgrade: ?UpgradeHandler = null,
     open: ?OpenHandler = null,
     message: ?uws_websocket_message = null,

@@ -6,11 +6,11 @@ pub const uWSWebSocket = opaque {
     pub const getBufferedAmount = c.uws_ws_get_buffered_amount;
 
     pub fn send(self: *uWSWebSocket, message: []const u8, opcode: c.Opcode) c.Status {
-        return c.uws_ws_send(self, message.ptr, message.len, @intFromEnum(opcode));
+        return c.uws_ws_send(self, message.ptr, message.len, opcode);
     }
 
     pub fn sendWithOptions(self: *uWSWebSocket, message: []const u8, opcode: c.Opcode, compress: bool, fin: bool) c.Status {
-        return c.uws_ws_send_with_options(self, message.ptr, message.len, @intFromEnum(opcode), compress, fin);
+        return c.uws_ws_send_with_options(self, message.ptr, message.len, opcode, compress, fin);
     }
 
     pub fn sendFragment(self: *uWSWebSocket, message: []const u8, compress: bool) c.Status {
@@ -22,7 +22,7 @@ pub const uWSWebSocket = opaque {
     }
 
     pub fn sendFirstFragmentWithOpcode(self: *uWSWebSocket, message: []const u8, opcode: c.Opcode, compress: bool) c.Status {
-        return c.uws_ws_send_first_fragment_with_opcode(self, message.ptr, message.len, @intFromEnum(opcode), compress);
+        return c.uws_ws_send_first_fragment_with_opcode(self, message.ptr, message.len, opcode, compress);
     }
 
     pub fn sendLastFragment(self: *uWSWebSocket, message: []const u8, compress: bool) c.Status {

@@ -118,13 +118,13 @@ pub fn build(b: *std.Build) !void {
         .flags = try us_flags.toOwnedSlice(b.allocator),
     });
 
-    const uws = b.addTranslateC(.{
+    const uws = b.createModule(.{
         .root_source_file = b.path("bindings/uws.h"),
         .target = target,
         .optimize = optimize,
     });
 
-    uws.defineCMacro("ZUWS_USE_SSL", if (ssl) "1" else "0");
+    uws.addCMacro("ZUWS_USE_SSL", if (ssl) "1" else "0");
 
     var uws_flags = try std.ArrayList([]const u8).initCapacity(b.allocator, 4);
 

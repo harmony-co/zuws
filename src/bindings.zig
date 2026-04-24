@@ -35,7 +35,7 @@ pub const TryEndResult = extern struct {
 
 pub const OnWritableHandler = *const fn (*Response, u32) callconv(.c) bool;
 pub const OnAbortedHandler = *const fn (*Response) callconv(.c) bool;
-pub const OnDataHandler = *const fn (*anyopaque, *Response, [*c]const u8, usize, bool) callconv(.c) bool;
+pub const OnDataHandler = *const fn (*anyopaque, *Response, [*c]const u8, usize, bool) callconv(.c) void;
 
 pub extern fn uws_res_close(res: *Response) void;
 pub extern fn uws_res_end(res: *Response, data: [*c]const u8, length: usize, close_connection: bool) void;

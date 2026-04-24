@@ -191,3 +191,15 @@ pub extern fn uws_ws_publish_with_options(ws: *WebSocket, topic: [*c]const u8, t
 pub extern fn uws_ws_get_buffered_amount(ws: *WebSocket) c_uint;
 pub extern fn uws_ws_get_remote_address(ws: *WebSocket, dest: [*c][*c]const u8) usize;
 pub extern fn uws_ws_get_remote_address_as_text(ws: *WebSocket, dest: [*c][*c]const u8) usize;
+
+// uSockets
+
+pub const SSLSocketOptions = extern struct {
+    key_file_name: [*]const u8,
+    cert_file_name: [*]const u8,
+    passphrase: [*]const u8,
+    dh_params_file_name: [*]const u8,
+    ca_file_name: [*]const u8,
+    ssl_ciphers: [*]const u8,
+    ssl_prefer_low_memory_usage: c_int,
+};

@@ -91,20 +91,18 @@ pub const Response = opaque {
     pub const close = c.uws_res_close;
     pub const pause = c.uws_res_pause;
     pub const restart = c.uws_res_resume;
+    pub const cork = c.uws_res_cork;
     pub const writeContinue = c.uws_res_write_continue;
+    pub const hasResponded = c.uws_res_has_responded;
+    pub const overrideWriteOffset = c.uws_res_override_write_offset;
+    pub const endWithoutBody = c.uws_res_end_without_body;
+    pub const onWritable = c.uws_res_on_writable;
+    pub const onAborted = c.uws_res_on_aborted;
+    pub const onData = c.uws_res_on_data;
+    pub const getWriteOffset = c.uws_res_get_write_offset;
 
     pub fn end(self: *Response, data: []const u8, close_connection: bool) void {
         c.uws_res_end(self, data.ptr, data.len, close_connection);
-    }
-
-    pub fn cork(self: *Response, callback: fn (*Response) void) void {
-        const callbackWrapper = struct {
-            fn cW(uws_res: ?*const c.uws_res_t) callconv(.c) void {
-                var res = Response{ .ptr = @constCast(uws_res) orelse return };
-                callback(&res);
-            }
-        }.cW;
-        c.uws_res_cork(self, callbackWrapper);
     }
 
     pub fn writeStatus(self: *Response, status: []const u8) void {
@@ -129,35 +127,8 @@ pub const Response = opaque {
         c.uws_res_write_header_int(self, key.ptr, key.len, value);
     }
 
-    pub fn endWithoutBody(self: *Response, close_connection: bool) void {
-        c.uws_res_end_without_body(self, close_connection);
-    }
-
     pub fn write(self: *Response, data: []const u8) bool {
         return c.uws_res_write(self, data.ptr, data.len);
-    }
-
-    pub fn overrideWriteOffset(self: *Response, offset: u64) void {
-        c.uws_res_override_write_offset(self, offset);
-    }
-
-    pub fn hasResponded(self: *Response) bool {
-        return c.uws_res_has_responded(self);
-    }
-
-    // TODO: Look into implementing wrappers for these
-    pub fn onWritable(self: *Response, handler: c.uws_res_on_writable_handler) void {
-        c.uws_res_on_writable(self, handler);
-    }
-
-    pub fn onAborted(self: *Response, handler: c.uws_res_on_aborted_handler) void {
-        c.uws_res_on_aborted(self, handler);
-    }
-
-    const OnDataCallback = fn (*Response, *anyopaque, []const u8, bool) void;
-
-    pub fn onData(self: *Response, ctx: *anyopaque, callback: OnDataCallback) void {
-        c.uws_res_on_data(self, ctx, callback);
     }
 
     pub fn upgrade(
@@ -184,10 +155,6 @@ pub const Response = opaque {
 
     pub fn tryEnd(self: *Response, data: []const u8, totalSize: u64, close_connection: bool) c.uws_try_end_result_t {
         return c.uws_res_try_end(self, data.ptr, data.len, totalSize, close_connection);
-    }
-
-    pub fn getWriteOffset(self: *Response) u64 {
-        return c.uws_res_get_write_offset(self);
     }
 
     pub fn getRemoteAddress(self: *Response) []const u8 {

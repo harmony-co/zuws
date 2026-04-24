@@ -43,7 +43,7 @@ pub const uWSApp = opaque {
     pub const trace = AppMethod(.TRACE);
     pub const any = AppMethod(.ANY);
 
-    fn initSSL(opt: c.struct_us_socket_context_options_t) !*uWSApp {
+    fn initSSL(opt: c.SSLSocketOptions) !*uWSApp {
         const app = c.uws_create_app(opt);
         if (app) |ptr| return ptr;
         return error.CouldNotCreateApp;
@@ -127,11 +127,11 @@ pub const uWSApp = opaque {
         raw_ws: *WebSocket,
         message: [*c]const u8,
         length: usize,
-        opcode: c_uint,
+        opcode: c.Opcode,
     ) callconv(.c) void {
         return struct {
-            fn messageHandler(raw_ws: *WebSocket, message: [*c]const u8, length: usize, opcode: c_uint) callconv(.c) void {
-                handler(raw_ws, message[0..length], @enumFromInt(opcode));
+            fn messageHandler(raw_ws: *WebSocket, message: [*c]const u8, length: usize, opcode: c.Opcode) callconv(.c) void {
+                handler(raw_ws, message[0..length], opcode);
             }
         }.messageHandler;
     }

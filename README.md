@@ -36,19 +36,16 @@ const zuws = b.dependency("zuws", .{
 exe.root_module.addImport("zuws", zuws.module("zuws"));
 ```
 
-> [!NOTE]
-> The raw C bindings are available via `zuws.module("uws")`
-
 # Usage
 
 ```zig
-const uws = @import("zuws");
-const App = uws.App;
-const Request = uws.Request;
-const Response = uws.Response;
+const zuws = @import("zuws");
+const App = zuws.App;
+const Request = zuws.Request;
+const Response = zuws.Response;
 
 pub fn main() !void {
-    const app: App = try .init();
+    const app = try App.init();
     defer app.deinit();
 
     app.get("/hello", hello);
@@ -56,7 +53,7 @@ pub fn main() !void {
     app.run();
 }
 
-fn hello(res: *Response, _: *Request) void {
+fn hello(res: *Response, _: *Request) callconv(.c) void {
     const str = "Hello World!\n";
     res.end(str, false);
 }
@@ -77,7 +74,7 @@ The grouping API has a `comptime` and a `runtime` variant, most of the time you 
 ## Creating groups at `comptime`
 
 ```zig
-const app: App = try .init();
+const app = try App.init();
 defer app.deinit();
 
 const my_group = App.Group.initComptime("/v1")
@@ -91,10 +88,10 @@ app.comptimeGroup(my_group);
 ## Creating groups at `runtime`
 
 ```zig
-const app: App = try .init();
+const app = try App.init();
 defer app.deinit();
 
-var gpa: std.heap.GeneralPurposeAllocator(.{}) = .init;
+var gpa: std.heap.DebugAllocator(.{}) = .init;
 const allocator = gpa.allocator();
 
 var my_group = App.Group.init(allocator, "/v1");
@@ -118,7 +115,7 @@ We provide 2 different ways of combining groups together.
 ### Grouping
 
 ```zig
-const app: App = try .init();
+const app = try App.init();
 defer app.deinit();
 
 const api = App.Group.initComptime("/api");
@@ -135,7 +132,7 @@ app.comptimeGroup(api);
 ### Merging
 
 ```zig
-const app: App = try .init();
+const app = try App.init();
 defer app.deinit();
 
 const v1 = App.Group.initComptime("/v1")

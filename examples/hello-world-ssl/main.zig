@@ -4,15 +4,16 @@ const Request = zuws.Request;
 const Response = zuws.Response;
 
 pub fn main() !void {
-    const app: App = try .init(.{
+    const app = try App.init(.{
         .key_file_name = "misc/key.pem",
         .cert_file_name = "misc/cert.pem",
         .passphrase = "1234",
     });
+
     defer app.deinit();
 
     _ = app.get("/*", struct {
-        fn f(res: *Response, _: *Request) void {
+        fn f(res: *Response, _: *Request) callconv(.c) void {
             res.end("Hello World!\n", false);
         }
     }.f);

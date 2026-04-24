@@ -23,38 +23,6 @@ extern "C"
         int options;
     } uws_app_listen_config_t;
 
-    typedef enum
-    {
-        /* These are not actual compression options */
-        _COMPRESSOR_MASK = 0x00FF,
-        _DECOMPRESSOR_MASK = 0x0F00,
-        /* Disabled, shared, shared are "special" values */
-        DISABLED = 0,
-        SHARED_COMPRESSOR = 1,
-        SHARED_DECOMPRESSOR = 1 << 8,
-        /* Highest 4 bits describe decompressor */
-        DEDICATED_DECOMPRESSOR_32KB = 15 << 8,
-        DEDICATED_DECOMPRESSOR_16KB = 14 << 8,
-        DEDICATED_DECOMPRESSOR_8KB = 13 << 8,
-        DEDICATED_DECOMPRESSOR_4KB = 12 << 8,
-        DEDICATED_DECOMPRESSOR_2KB = 11 << 8,
-        DEDICATED_DECOMPRESSOR_1KB = 10 << 8,
-        DEDICATED_DECOMPRESSOR_512B = 9 << 8,
-        /* Same as 32kb */
-        DEDICATED_DECOMPRESSOR = 15 << 8,
-        /* Lowest 8 bit describe compressor */
-        DEDICATED_COMPRESSOR_3KB = 9 << 4 | 1,
-        DEDICATED_COMPRESSOR_4KB = 9 << 4 | 2,
-        DEDICATED_COMPRESSOR_8KB = 10 << 4 | 3,
-        DEDICATED_COMPRESSOR_16KB = 11 << 4 | 4,
-        DEDICATED_COMPRESSOR_32KB = 12 << 4 | 5,
-        DEDICATED_COMPRESSOR_64KB = 13 << 4 | 6,
-        DEDICATED_COMPRESSOR_128KB = 14 << 4 | 7,
-        DEDICATED_COMPRESSOR_256KB = 15 << 4 | 8,
-        /* Same as 256kb */
-        DEDICATED_COMPRESSOR = 15 << 4 | 8
-    } uws_compress_options_t;
-
 #pragma region uWS-App
 
     struct uws_app_s;
@@ -79,7 +47,7 @@ extern "C"
     METHOD(any)
 
 #define METHOD(name) \
-    void uws_app_##name(uws_app_t *app, const char *pattern, uws_method_handler handler);
+    uws_app_t *uws_app_##name(uws_app_t *app, const char *pattern, uws_method_handler handler);
     HTTP_METHODS
 #undef METHOD
 
@@ -105,7 +73,7 @@ uws_app_t *uws_create_app();
 
     typedef bool (*uws_res_on_writable_handler)(uws_res_t *res, uintmax_t);
     typedef bool (*uws_res_on_aborted_handler)(uws_res_t *res);
-    typedef void (*uws_res_on_data_handler)(uws_res_t *res, void *ctx, const char *chunk, size_t chunk_length, bool is_end);
+    typedef void (*uws_res_on_data_handler)(void *ctx, uws_res_t *res, const char *chunk, size_t chunk_length, bool is_end);
 
     void uws_res_close(uws_res_t *res);
     void uws_res_end(uws_res_t *res, const char *data, size_t length, bool close_connection);
@@ -122,7 +90,7 @@ uws_app_t *uws_create_app();
     bool uws_res_has_responded(uws_res_t *res);
     void uws_res_on_writable(uws_res_t *res, uws_res_on_writable_handler handler);
     void uws_res_on_aborted(uws_res_t *res, uws_res_on_aborted_handler handler);
-    void uws_res_on_data(uws_res_t *res, void *ctx, uws_res_on_data_handler handler);
+    void uws_res_on_data(void *ctx, uws_res_t *res, uws_res_on_data_handler handler);
     void uws_res_upgrade(uws_res_t *res, void *data, const char *sec_web_socket_key, size_t sec_web_socket_key_length, const char *sec_web_socket_protocol, size_t sec_web_socket_protocol_length, const char *sec_web_socket_extensions, size_t sec_web_socket_extensions_length, uws_socket_context_t *ws);
 
     uws_try_end_result_t uws_res_try_end(uws_res_t *res, const char *data, size_t length, uintmax_t total_size, bool close_connection);
@@ -180,7 +148,7 @@ uws_app_t *uws_create_app();
 
     typedef struct
     {
-        uws_compress_options_t compression;
+        uint16_t compression;
         unsigned int maxPayloadLength;
         unsigned short idleTimeout;
         unsigned int maxBackpressure;
@@ -199,7 +167,7 @@ uws_app_t *uws_create_app();
         uws_websocket_subscription subscription;
     } uws_socket_behavior_t;
 
-    void uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior);
+    uws_app_t *uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior);
     void uws_ws_close(uws_websocket_t *ws);
     uws_sendstatus_t uws_ws_send(uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode);
     uws_sendstatus_t uws_ws_send_with_options(uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode, bool compress, bool fin);

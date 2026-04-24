@@ -6,11 +6,11 @@ const Request = zuws.Request;
 const Response = zuws.Response;
 
 pub fn main() !void {
-    const app: App = try .init();
+    const app = try App.init();
     defer app.deinit();
 
     _ = app.get("/*", struct {
-        fn f(res: *Response, _: *Request) void {
+        fn f(res: *Response, _: *Request) callconv(.c) void {
             res.end("Hello World!\n", false);
         }
     }.f);
@@ -19,7 +19,7 @@ pub fn main() !void {
     app.run();
 }
 
-fn listen(socket: ?*App.ListenSocket) void {
+fn listen(socket: ?*zuws.c.ListenSocket) callconv(.c) void {
     if (socket == null) {
         @panic("Failed to listen");
     }

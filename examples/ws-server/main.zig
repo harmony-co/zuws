@@ -6,7 +6,7 @@ const Response = zuws.Response;
 const WebSocket = zuws.WebSocket;
 
 pub fn main() !void {
-    const app: App = try .init();
+    const app = try App.init();
     defer app.deinit();
 
     _ = app.ws("/ws", .{
@@ -26,21 +26,25 @@ pub fn main() !void {
     app.run();
 }
 
-fn upgrade(res: *Response, req: *Request) void {
+fn upgrade(res: *Response, req: *Request, ctx: *zuws.c.SocketContext) callconv(.c) void {
     std.debug.print("Upgrade: {any} | {any}\n", .{ res, req });
+    res.upgrade(req, ctx) catch {
+        res.writeStatusCode(.BadRequest);
+        res.endWithoutBody(true);
+    };
 }
 
-fn open(ws: *WebSocket) void {
+fn open(ws: *WebSocket) callconv(.c) void {
     std.debug.print("Open: {any}\n", .{ws});
     _ = ws.subscribe("NonsensicalTest");
 }
 
-fn on_message(ws: *WebSocket, message: []const u8, opcode: WebSocket.Opcode) void {
+fn on_message(ws: *WebSocket, message: []const u8, opcode: zuws.c.Opcode) void {
     std.debug.print("Message: {any} | {s} | {any}\n", .{ ws, message, opcode });
     _ = ws.send("zuws", .text);
 }
 
-fn drain(ws: *WebSocket) void {
+fn drain(ws: *WebSocket) callconv(.c) void {
     std.debug.print("Drain: {any}\n", .{ws});
 }
 

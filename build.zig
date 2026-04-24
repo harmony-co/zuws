@@ -46,7 +46,7 @@ pub fn build(b: *std.Build) !void {
         zlib.link_data_sections = true;
         zlib.link_gc_sections = true;
 
-        zlib.addCSourceFiles(.{
+        zlib.root_module.addCSourceFiles(.{
             .root = zlib_c.path(""),
             .files = &.{
                 "adler32.c",
@@ -118,13 +118,13 @@ pub fn build(b: *std.Build) !void {
         .flags = try us_flags.toOwnedSlice(b.allocator),
     });
 
-    const uws = b.addTranslateC(.{
+    const uws = b.createModule(.{
         .root_source_file = b.path("bindings/uws.h"),
         .target = target,
         .optimize = optimize,
     });
 
-    uws.defineCMacro("ZUWS_USE_SSL", if (ssl) "1" else "0");
+    uws.addCMacro("ZUWS_USE_SSL", if (ssl) "1" else "0");
 
     var uws_flags = try std.ArrayList([]const u8).initCapacity(b.allocator, 4);
 
@@ -133,23 +133,21 @@ pub fn build(b: *std.Build) !void {
     if (with_proxy) try uws_flags.append(b.allocator, "-DUWS_WITH_PROXY");
     //if (target.result.os.tag != .windows) try uws_flags.append("-flto=auto");
 
-    const uWebSockets = uws.addModule("uws");
-    uWebSockets.link_libcpp = true;
-    uWebSockets.linkLibrary(uSockets);
-    uWebSockets.addCSourceFiles(.{
+    const zuws = b.addModule("zuws", .{
+        .root_source_file = b.path("src/root.zig"),
+        .target = target,
+        .optimize = optimize,
+        .link_libcpp = true,
+    });
+
+    zuws.addCSourceFiles(.{
         .root = b.path("bindings/"),
         .files = &.{"uws.cpp"},
         .flags = try uws_flags.toOwnedSlice(b.allocator),
     });
 
-    const zuws = b.addModule("zuws", .{
-        .root_source_file = b.path("src/root.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-
+    zuws.linkLibrary(uSockets);
     zuws.addOptions("config", config_options);
-    zuws.addImport("uws", uWebSockets);
     const libzuws = b.addLibrary(.{
         .name = "zuws",
         .linkage = .static,
@@ -172,7 +170,7 @@ pub fn build(b: *std.Build) !void {
     if (b.args) |args| {
         const example_name = args[0];
         const path = try std.fmt.allocPrint(b.allocator, "examples/{s}/main.zig", .{example_name});
-        try std.fs.cwd().access(path, .{});
+        try std.Io.Dir.cwd().access(b.graph.io, path, .{});
 
         const exe = b.addExecutable(.{
             .name = example_name,
@@ -183,7 +181,6 @@ pub fn build(b: *std.Build) !void {
             }),
         });
 
-        exe.root_module.addImport("uws", uWebSockets);
         exe.root_module.addImport("zuws", zuws);
         b.installArtifact(exe);
 

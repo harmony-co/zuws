@@ -11,9 +11,10 @@
 #pragma region uWS-App
 
 #define METHOD(name)                                                                                                                         \
-    void uws_app_##name(uws_app_t *app, const char *pattern, uws_method_handler handler)                                                     \
+    uws_app_t *uws_app_##name(uws_app_t *app, const char *pattern, uws_method_handler handler)                                               \
     {                                                                                                                                        \
         ((uWS::TemplatedApp<IS_SSL> *)app)->name(pattern, [handler](auto *res, auto *req) { handler((uws_res_t *)res, (uws_req_t *)req); }); \
+        return app;                                                                                                                          \
     };
 HTTP_METHODS
 #undef METHOD
@@ -137,10 +138,10 @@ void uws_res_on_aborted(uws_res_t *res, uws_res_on_aborted_handler handler)
                                                   { handler(res); });
 }
 
-void uws_res_on_data(uws_res_t *res, void *ctx, uws_res_on_data_handler handler)
+void uws_res_on_data(void *ctx, uws_res_t *res, uws_res_on_data_handler handler)
 {
-    ((uWS::HttpResponse<IS_SSL> *)res)->onData([res, ctx, handler](auto chunk, bool is_end)
-                                               { handler(res, ctx, chunk.data(), chunk.length(), is_end); });
+    ((uWS::HttpResponse<IS_SSL> *)res)->onData([ctx, res, handler](auto chunk, bool is_end)
+                                               { handler(ctx, res, chunk.data(), chunk.length(), is_end); });
 }
 
 void uws_res_upgrade(uws_res_t *res, void *data, const char *sec_web_socket_key, size_t sec_web_socket_key_length, const char *sec_web_socket_protocol, size_t sec_web_socket_protocol_length, const char *sec_web_socket_extensions, size_t sec_web_socket_extensions_length, uws_socket_context_t *ws)
@@ -271,10 +272,10 @@ size_t uws_req_get_parameter_index(uws_req_t *res, unsigned short index, const c
         generic_handler.field = [handler] lambda_args lambda_body; \
     }
 
-void uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior)
+uws_app_t *uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior)
 {
     auto generic_handler = uWS::TemplatedApp<IS_SSL>::WebSocketBehavior<void *>{
-        .compression = (uWS::CompressOptions)(uint64_t)behavior.compression,
+        .compression = (uWS::CompressOptions)behavior.compression,
         .maxPayloadLength = behavior.maxPayloadLength,
         .idleTimeout = behavior.idleTimeout,
         .maxBackpressure = behavior.maxBackpressure,
@@ -322,6 +323,7 @@ void uws_ws(uws_app_t *app, const char *pattern, uws_socket_behavior_t behavior)
 
     uWS::TemplatedApp<IS_SSL> *uwsApp = (uWS::TemplatedApp<IS_SSL> *)app;
     uwsApp->ws<void *>(pattern, std::move(generic_handler));
+    return app;
 }
 
 void uws_ws_close(uws_websocket_t *ws)

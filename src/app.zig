@@ -125,20 +125,20 @@ pub const uWSApp = opaque {
 
     fn messageWrapper(handler: c.MessageHandler) fn (
         raw_ws: *WebSocket,
-        message: [*c]const u8,
+        message: [*]const u8,
         length: usize,
         opcode: c.Opcode,
     ) callconv(.c) void {
         return struct {
-            fn messageHandler(raw_ws: *WebSocket, message: [*c]const u8, length: usize, opcode: c.Opcode) callconv(.c) void {
+            fn messageHandler(raw_ws: *WebSocket, message: [*]const u8, length: usize, opcode: c.Opcode) callconv(.c) void {
                 handler(raw_ws, message[0..length], opcode);
             }
         }.messageHandler;
     }
 
-    fn pingWrapper(handler: c.PingPongHandler) fn (raw_ws: *WebSocket, message: [*c]const u8, length: usize) callconv(.c) void {
+    fn pingWrapper(handler: c.PingPongHandler) fn (raw_ws: *WebSocket, message: [*]const u8, length: usize) callconv(.c) void {
         return struct {
-            fn pingHandler(raw_ws: *WebSocket, message: [*c]const u8, length: usize) callconv(.c) void {
+            fn pingHandler(raw_ws: *WebSocket, message: [*]const u8, length: usize) callconv(.c) void {
                 handler(raw_ws, message[0..length]);
             }
         }.pingHandler;
@@ -147,11 +147,11 @@ pub const uWSApp = opaque {
     fn closeWrapper(handler: c.CloseHandler) fn (
         raw_ws: *WebSocket,
         code: c_int,
-        message: [*c]const u8,
+        message: [*]const u8,
         length: usize,
     ) callconv(.c) void {
         return struct {
-            fn closeHandler(raw_ws: *WebSocket, code: c_int, message: [*c]const u8, length: usize) callconv(.c) void {
+            fn closeHandler(raw_ws: *WebSocket, code: c_int, message: [*]const u8, length: usize) callconv(.c) void {
                 handler(raw_ws, code, if (length > 0) message[0..length] else null);
             }
         }.closeHandler;
@@ -159,7 +159,7 @@ pub const uWSApp = opaque {
 
     fn subscriptionWrapper(handler: c.SubscriptionHandler) fn (
         raw_ws: *WebSocket,
-        topic_name: [*c]const u8,
+        topic_name: [*]const u8,
         topic_name_length: usize,
         new_number_of_subscriber: c_int,
         old_number_of_subscriber: c_int,
@@ -167,7 +167,7 @@ pub const uWSApp = opaque {
         return struct {
             fn subscriptionHandler(
                 raw_ws: *WebSocket,
-                topic_name: [*c]const u8,
+                topic_name: [*]const u8,
                 topic_name_length: usize,
                 new_number_of_subscriber: c_int,
                 old_number_of_subscriber: c_int,

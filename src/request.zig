@@ -6,13 +6,13 @@ const App = @import("./app.zig").uWSApp;
 
 pub const Request = opaque {
     pub fn getUrl(self: *Request) []const u8 {
-        var temp: [*c]const u8 = undefined;
+        var temp: [*]const u8 = undefined;
         const len = c.uws_req_get_url(self, &temp);
         return temp[0..len];
     }
 
     pub fn getFullUrl(self: *Request) []const u8 {
-        var temp: [*c]const u8 = undefined;
+        var temp: [*]const u8 = undefined;
         const len = c.uws_req_get_full_url(self, &temp);
         return temp[0..len];
     }
@@ -28,7 +28,7 @@ pub const Request = opaque {
     }
 
     pub fn getCaseSensitiveMethod(self: *Request) []const u8 {
-        var temp: [*c]const u8 = undefined;
+        var temp: [*]const u8 = undefined;
         const len = c.uws_req_get_case_sensitive_method(self, &temp);
         return temp[0..len];
     }
@@ -43,26 +43,26 @@ pub const Request = opaque {
         return try map.clone();
     }
 
-    fn headerIterator(ctx: ?*anyopaque, key: [*c]const u8, key_len: usize, value: [*c]const u8, value_len: usize) callconv(.c) u8 {
+    fn headerIterator(ctx: ?*anyopaque, key: [*]const u8, key_len: usize, value: [*]const u8, value_len: usize) callconv(.c) u8 {
         const map: *Headers = @ptrCast(@alignCast(ctx));
         map.put(key[0..key_len], value[0..value_len]) catch return 1;
         return 0;
     }
 
     pub fn getHeader(self: *Request, lower_case_header: []const u8) ?[]const u8 {
-        var temp: [*c]const u8 = undefined;
+        var temp: ?[*]const u8 = undefined;
         const len = c.uws_req_get_header(self, lower_case_header.ptr, lower_case_header.len, &temp);
-        return if (temp == null) null else temp[0..len];
+        return if (temp) |t| t[0..len] else null;
     }
 
     pub fn getQueryParam(self: *Request, name: []const u8) ?[]const u8 {
-        var temp: [*c]const u8 = undefined;
+        var temp: ?[*]const u8 = undefined;
         const len = c.uws_req_get_query(self, name.ptr, name.len, &temp);
-        return if (temp == null) null else temp[0..len];
+        return if (temp) |t| t[0..len] else null;
     }
 
     pub fn getParameter(self: *Request, index: u16) []const u8 {
-        var temp: [*c]const u8 = undefined;
+        var temp: [*]const u8 = undefined;
         const len = c.uws_req_get_parameter_index(self, @as(c_ushort, index), &temp);
         return temp[0..len];
     }
